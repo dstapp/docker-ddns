@@ -1,0 +1,8 @@
+options {
+        directory "/var/cache/bind";
+        dnssec-validation auto;
+        recursion no;
+        allow-transfer { none; };
+        auth-nxdomain no;
+        listen-on-v6 { any; };
+};

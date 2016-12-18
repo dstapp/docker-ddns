@@ -1,0 +1,3 @@
+SHARED_SECRET=changeme
+ZONE=example.org
+RECORD_TTL=3600
