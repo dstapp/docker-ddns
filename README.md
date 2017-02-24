@@ -13,7 +13,7 @@ $EDITOR envfile
 make deploy
 ```
 
-Make sure to change all environment variables in `envfile` to match your needs.
+Make sure to change all environment variables in `envfile` to match your needs. Some more information can be found here: https://www.davd.eu/build-your-own-dynamic-dns-in-5-minutes/
 
 Afterwards you have a running docker container that exposes three ports:
 
