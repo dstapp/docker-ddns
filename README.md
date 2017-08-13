@@ -2,9 +2,29 @@
 
 This package allows you to set up a server for dynamic DNS using docker with a
 few simple commands. You don't have to worry about nameserver setup, REST API
-and all that stuff. Setup is as easy as that:
+and all that stuff.
 
 ## Installation
+
+You can either take the image from DockerHub or build it on your own.
+
+### Using DockerHub
+
+Just customize this to your needs and run:
+
+```
+docker run -it -d \
+    -p 8080:8080 \
+    -p 53:53 \
+    -p 53:53/udp \
+    -e SHARED_SECRET=changeme \
+    -e ZONE=example.org \
+    -e RECORD_TTL=3600 \
+    --name=dyndns \
+    davd/docker-ddns:latest
+```
+
+### Build from source / GitHub
 
 ```
 git clone https://github.com/dprandzioch/docker-ddns
@@ -14,6 +34,8 @@ make deploy
 ```
 
 Make sure to change all environment variables in `envfile` to match your needs. Some more information can be found here: https://www.davd.eu/build-your-own-dynamic-dns-in-5-minutes/
+
+## Exposed ports
 
 Afterwards you have a running docker container that exposes three ports:
 
