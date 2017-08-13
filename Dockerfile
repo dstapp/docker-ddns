@@ -1,5 +1,5 @@
-FROM debian:jessie
-MAINTAINER David Prandzioch <hello@davd.eu>
+FROM debian:stretch
+MAINTAINER David Prandzioch <hello+ddns@davd.eu>
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 	apt-get install -q -y bind9 dnsutils golang git-core && \
