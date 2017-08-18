@@ -24,6 +24,9 @@ docker run -it -d \
     davd/docker-ddns:latest
 ```
 
+If you want to persist DNS configuration across container recreation, add `-v /somefolder:/var/cache/bind`. If you are experiencing any issues updating DNS configuration using the API
+(`NOTAUTH` and `SERVFAIL`), make sure to add writing permissions for root (UID=0) to your persistent storage (e.g. `chmod -R a+w /somefolder`).
+
 ### Build from source / GitHub
 
 ```
@@ -89,3 +92,7 @@ http://ns.domain.tld:8080/update?...
 
 If you provide `foo` as a domain when using the REST API, the resulting domain
 will then be `foo.dyndns.domain.tld`.
+
+## Common pitfalls
+
+* If you're on a systemd-based distribution, the process `systemd-resolved` might occupy the DNS port 53. Therefore starting the container might fail. To fix this disable the DNSStubListener by adding `DNSStubListener=no` to `/etc/systemd/resolved.conf` and restart the service using `sudo systemctl restart systemd-resolved.service` but be aware of the implications... Read more here: https://www.freedesktop.org/software/systemd/man/systemd-resolved.service.html
