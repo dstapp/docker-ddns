@@ -6,7 +6,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 ENV GOPATH=/root/go
 RUN mkdir -p /root/go/src
 COPY rest-api /root/go/src/dyndns
-RUN cd /root/go/src/dyndns && go get
+RUN cd /root/go/src/dyndns && go get && go test -v
 
 FROM debian:stretch
 MAINTAINER David Prandzioch <hello+ddns@davd.eu>
