@@ -1,6 +1,9 @@
 image:
 	docker build -t davd/docker-ddns:latest .
 
+armv7hf_image:
+	docker build -t davd/docker-ddns:armv7hf-latest -f Dockerfile.armv7hf .
+
 console:
 	docker run -it -p 8080:8080 -p 53:53 -p 53:53/udp --rm davd/docker-ddns:latest bash
 
