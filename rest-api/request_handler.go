@@ -27,7 +27,7 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config) Webs
     response.Address = vals.Get("addr")
 
     if sharedSecret != appConfig.SharedSecret {
-		log.Println(fmt.Sprintf("Invalid shared secret: %s", sharedSecret))
+        log.Println(fmt.Sprintf("Invalid shared secret: %s", sharedSecret))
         response.Success = false
         response.Message = "Invalid Credentials"
         return response
