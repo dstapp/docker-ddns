@@ -2,6 +2,7 @@
 * Update Debian Jessie to Debian Stretch
 * Multistage Dockerfile resulting in smaller production image
 * Code refactoring
+* Extended response
 * Basic unit test coverage
 * Documentation on running from DockerHub
 
