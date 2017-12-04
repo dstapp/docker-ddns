@@ -15,6 +15,10 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 	apt-get install -q -y bind9 dnsutils && \
 	apt-get clean
 
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
+        apt-get install -q -y vim udev cron && \
+        apt-get clean
+
 RUN chmod 770 /var/cache/bind
 COPY setup.sh /root/setup.sh
 RUN chmod +x /root/setup.sh

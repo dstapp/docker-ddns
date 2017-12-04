@@ -10,7 +10,7 @@ then
 	cat >> /etc/bind/named.conf <<EOF
 zone "$ZONE" {
 	type master;
-	file "$ZONE.zone";
+	file "$ZONE.zone.signed";
 	allow-query { any; };
 	allow-transfer { none; };
 	allow-update { localhost; };
@@ -48,3 +48,5 @@ then
 }
 EOF
 fi
+
+chown -R bind:bind /var/cache/bind
