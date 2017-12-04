@@ -6,41 +6,41 @@
 
 if [ ! -f /var/cache/bind/$ZONE.zone ]
 then
-	echo "creating zone...";
-	cat >> /etc/bind/named.conf <<EOF
+    echo "creating zone...";
+    cat >> /etc/bind/named.conf <<EOF
 zone "$ZONE" {
-	type master;
-	file "$ZONE.zone.signed";
-	allow-query { any; };
-	allow-transfer { none; };
-	allow-update { localhost; };
+    type master;
+    file "$ZONE.zone.signed";
+    allow-query { any; };
+    allow-transfer { none; };
+    allow-update { localhost; };
 };
 EOF
-	
-	echo "creating zone file..."
-	if [ 'z "$NS" ]
-	then
-		IFS="," read -r -a elements <<< "$NS"
-		for element in ${elements[@]}
-		do
-			SHORT+="${element%%.*}. "
-			LONG+="$element. "
-		done
-	else
-		SHORT="${NS%%.*}."
-		LONG+="$NS."
-	fi
-	cat > /var/cache/bind/$ZONE.zone <<EOF
+    
+    echo "creating zone file..."
+    if [ 'z "$NS" ]
+    then
+        IFS="," read -r -a elements <<< "$NS"
+        for element in ${elements[@]}
+        do
+            SHORT+="${element%%.*}. "
+            LONG+="$element. "
+        done
+    else
+        SHORT="${NS%%.*}."
+        LONG+="$NS."
+    fi
+    cat > /var/cache/bind/$ZONE.zone <<EOF
 \$ORIGIN .
-\$TTL 86400	; 1 day
-$ZONE		IN SOA	$SHORT $LONG (
-				74         ; serial
-				3600       ; refresh (1 hour)
-				900        ; retry (15 minutes)
-				604800     ; expire (1 week)
-				86400      ; minimum (1 day)
-				)
-			NS	$SHORT
+\$TTL 86400    ; 1 day
+$ZONE        IN SOA    $SHORT $LONG (
+                74         ; serial
+                3600       ; refresh (1 hour)
+                900        ; retry (15 minutes)
+                604800     ; expire (1 week)
+                86400      ; minimum (1 day)
+                )
+            NS    $SHORT
 \$ORIGIN ${ZONE}.
 \$TTL ${RECORD_TTL}
 EOF
@@ -48,8 +48,8 @@ fi
 
 if [ ! -f /etc/dyndns.json ]
 then
-	echo "creating REST api config..."
-	cat > /etc/dyndns.json <<EOF
+    echo "creating REST api config..."
+    cat > /etc/dyndns.json <<EOF
 {
     "SharedSecret": "${SHARED_SECRET}",
     "Server": "localhost",
