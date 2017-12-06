@@ -18,7 +18,7 @@ zone "$ZONE" {
 EOF
     
     echo "creating zone file..."
-    if [ 'z "$NS" ]
+    if [ -z "$NS" ]
     then
         IFS="," read -r -a elements <<< "$NS"
         for element in ${elements[@]}
@@ -28,7 +28,7 @@ EOF
         done
     else
         SHORT="${NS%%.*}."
-        LONG+="$NS."
+        LONG="$NS."
     fi
     cat > /var/cache/bind/$ZONE.zone <<EOF
 \$ORIGIN .
