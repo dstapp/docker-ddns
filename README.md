@@ -95,4 +95,4 @@ will then be `foo.dyndns.domain.tld`.
 
 ## Common pitfalls
 
-* If you're on a systemd-based distribution, the process `systemd-resolved` might occupy the DNS port 53. Therefore starting the container might fail. To fix this disable the DNSStubListener by adding `DNSStubListener=no` to `/etc/systemd/resolved.conf` and restart the service using `sudo systemctl restart systemd-resolved.service` but be aware of the implications... Read more here: https://www.freedesktop.org/software/systemd/man/systemd-resolved.service.html
+* If you're on a systemd-based distribution, the process `systemd-resolved` might occupy the DNS port 53. Therefore starting the container might fail. To fix this disable the DNSStubListener by adding `DNSStubListener=no` to `/etc/systemd/resolved.conf` and restart the service using `sudo systemctl restart systemd-resolved.service` but be aware of the implications... Read more here: https://www.freedesktop.org/software/systemd/man/systemd-resolved.service.html and https://github.com/dprandzioch/docker-ddns/issues/5
