@@ -4,6 +4,7 @@ import (
     "log"
     "fmt"
     "net/http"
+    "strings"
 
     "dyndns/ipparser"
 )
@@ -12,6 +13,7 @@ type WebserviceResponse struct {
     Success bool
     Message string
     Domain string
+    Domains []string
     Address string
     AddrType string
 }
@@ -23,22 +25,27 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config) Webs
 
     vals := r.URL.Query()
     sharedSecret = vals.Get("secret")
-    response.Domain = vals.Get("domain")
+    response.Domains = strings.Split(vals.Get("domain"), ",")
     response.Address = vals.Get("addr")
 
     if sharedSecret != appConfig.SharedSecret {
-		log.Println(fmt.Sprintf("Invalid shared secret: %s", sharedSecret))
+        log.Println(fmt.Sprintf("Invalid shared secret: %s", sharedSecret))
         response.Success = false
         response.Message = "Invalid Credentials"
         return response
     }
 
-    if response.Domain == "" {
-        response.Success = false
-        response.Message = fmt.Sprintf("Domain not set")
-        log.Println("Domain not set")
-        return response
+    for _, domain := range response.Domains {
+        if domain == "" {
+            response.Success = false
+            response.Message = fmt.Sprintf("Domain not set")
+            log.Println("Domain not set")
+            return response
+        }
     }
+
+    // kept in the response for compatibility reasons
+    response.Domain = strings.Join(response.Domains, ",")
 
     if ipparser.ValidIP4(response.Address) {
         response.AddrType = "A"

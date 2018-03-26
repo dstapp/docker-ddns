@@ -1,5 +1,7 @@
 # Dynamic DNS with Docker, Go and Bind9
 
+![DockerHub build status](https://dockerbuildbadges.quelltext.eu/status.svg?organization=davd&repository=docker-ddns)
+
 This package allows you to set up a server for dynamic DNS using docker with a
 few simple commands. You don't have to worry about nameserver setup, REST API
 and all that stuff.
@@ -62,7 +64,8 @@ http://myhost.mydomain.tld:8080/update?secret=changeme&domain=foo&addr=1.2.3.4
 
 * `secret`: The shared secret set in `envfile`
 * `domain`: The subdomain to your configured domain, in this example it would
-result in `foo.example.org`
+   result in `foo.example.org`. Could also be multiple domains that should be
+   redirected to the same domain separated by comma, so "foo,bar"
 * `addr`: IPv4 or IPv6 address of the name record
 
 ## Accessing the REST API log

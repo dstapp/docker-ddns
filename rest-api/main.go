@@ -29,17 +29,25 @@ func main() {
 func Update(w http.ResponseWriter, r *http.Request) {
     response := BuildWebserviceResponseFromRequest(r, appConfig)
 
-    if response.Success {
-        result := UpdateRecord(response.Domain, response.Address, response.AddrType)
+    if response.Success == false {
+        json.NewEncoder(w).Encode(response)
+        return
+    }
 
-        if result == "" {
-            response.Success = true
-            response.Message = fmt.Sprintf("Updated %s record for %s to IP address %s", response.AddrType, response.Domain, response.Address)
-        } else {
+    for _, domain := range response.Domains {
+        result := UpdateRecord(domain, response.Address, response.AddrType)
+
+        if result != "" {
             response.Success = false
             response.Message = result
+
+            json.NewEncoder(w).Encode(response)
+            return
         }
     }
+
+    response.Success = true
+    response.Message = fmt.Sprintf("Updated %s record for %s to IP address %s", response.AddrType, response.Domain, response.Address)
 
     json.NewEncoder(w).Encode(response)
 }

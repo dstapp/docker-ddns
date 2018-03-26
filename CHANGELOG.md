@@ -1,3 +1,6 @@
+[1.2.0]
+* Allow usage of multiple domains
+
 [1.1.0]
 * Update Debian Jessie to Debian Stretch
 * Multistage Dockerfile resulting in smaller production image
