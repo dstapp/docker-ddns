@@ -31,4 +31,4 @@ api_test_recursion:
 	dig @localhost google.com
 
 deploy: image
-	docker run -it -d -p 8080:8080 -p 53:53 -p 53:53/udp --env-file envfile --name=dyndns davd/docker-ddns:latest
+	docker run -it -d --restart="always" -p 8080:8080 -p 53:53 -p 53:53/udp -v /opt/bind:/var/cache/bind --env-file envfile --name=dyndns davd/docker-ddns:latest
