@@ -34,6 +34,12 @@ $ZONE		IN SOA	localhost. root.localhost. (
 EOF
 fi
 
+# If /var/cache/bind is a volume, permissions are probably not ok
+chown root:bind /var/cache/bind
+chown bind:bind /var/cache/bind/*
+chmod 770 /var/cache/bind
+chmod 644 /var/cache/bind/*
+
 if [ ! -f /etc/dyndns.json ]
 then
 	echo "creating REST api config..."

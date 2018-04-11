@@ -1,3 +1,6 @@
+[1.2.1]
+* Fix permissions of /var/cache/bind on container startup
+
 [1.2.0]
 * Allow usage of multiple domains
 
