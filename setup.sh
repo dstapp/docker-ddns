@@ -4,7 +4,7 @@
 [ -z "$ZONE" ] && echo "ZONE not set" && exit 1;
 [ -z "$RECORD_TTL" ] && echo "RECORD_TTL not set" && exit 1;
 
-if [ ! -f /var/cache/bind/$ZONE.zone ]
+if ! grep 'zone "'$ZONE'"' /etc/bind/named.conf > /dev/null
 then
 	echo "creating zone...";
 	cat >> /etc/bind/named.conf <<EOF
@@ -16,7 +16,10 @@ zone "$ZONE" {
 	allow-update { localhost; };
 };
 EOF
-	
+fi
+
+if [ ! -f /var/cache/bind/$ZONE.zone ]
+then
 	echo "creating zone file..."
 	cat > /var/cache/bind/$ZONE.zone <<EOF
 \$ORIGIN .
@@ -33,6 +36,12 @@ $ZONE		IN SOA	localhost. root.localhost. (
 \$TTL ${RECORD_TTL}
 EOF
 fi
+
+# If /var/cache/bind is a volume, permissions are probably not ok
+chown root:bind /var/cache/bind
+chown bind:bind /var/cache/bind/*
+chmod 770 /var/cache/bind
+chmod 644 /var/cache/bind/*
 
 if [ ! -f /etc/dyndns.json ]
 then

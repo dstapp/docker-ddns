@@ -1,3 +1,7 @@
+[1.2.1]
+* Fix permissions of /var/cache/bind on container startup
+* Create zone options if not done, fixing support for persistent volumes
+
 [1.2.0]
 * Allow usage of multiple domains
 
