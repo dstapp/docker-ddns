@@ -1,6 +1,7 @@
 [1.3.0]
 * Add basic CI integration
 * Add usage example for docker-compose
+* Use request IP address when no `addr` is provided for better compatibility with DD-WRT (by vdweegen)
 
 [1.2.1]
 * Fix permissions of /var/cache/bind on container startup
