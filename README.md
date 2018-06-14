@@ -1,6 +1,7 @@
 # Dynamic DNS with Docker, Go and Bind9
 
 ![DockerHub build status](https://dockerbuildbadges.quelltext.eu/status.svg?organization=davd&repository=docker-ddns)
+![Travis build status](https://travis-ci.com/dprandzioch/docker-ddns.svg?branch=master)
 
 This package allows you to set up a server for dynamic DNS using docker with a
 few simple commands. You don't have to worry about nameserver setup, REST API
