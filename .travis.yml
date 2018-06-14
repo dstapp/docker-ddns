@@ -1,0 +1,18 @@
+language: go
+go:
+- 1.7.x
+
+services:
+- docker
+
+stages:
+- test
+- build
+
+jobs:
+    include:
+        - stage: test
+          script: make unit_tests
+    include:
+        - stage: build
+          script: make image
