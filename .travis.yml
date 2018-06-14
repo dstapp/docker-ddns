@@ -1,18 +1,16 @@
 language: go
 go:
 - 1.7.x
-
-services:
-- docker
-
-stages:
-- test
-- build
-
-jobs:
-    include:
-        - stage: test
-          script: make unit_tests
-    include:
-        - stage: build
-          script: make image
+script:
+- 'if [ "${JOB}" = "test" ]; then make unit_tests; fi'
+- 'if [ "${JOB}" = "build" ]; then make image; fi'
+env:
+    global:
+        - GOARCH=amd64
+matrix:
+    - JOB=test
+    - JOB=build
+notifications:
+    email:
+        on_success: change
+        on_failure: always
