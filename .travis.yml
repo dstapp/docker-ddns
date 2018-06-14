@@ -1,0 +1,13 @@
+language: go
+go:
+- 1.7.x
+
+services:
+- docker
+
+script: make unit_tests && make image
+
+notifications:
+    email:
+        on_success: change
+        on_failure: always

@@ -1,3 +1,6 @@
+[1.3.0]
+* Add basic CI integration
+
 [1.2.1]
 * Fix permissions of /var/cache/bind on container startup
 * Create zone options if not done, fixing support for persistent volumes
