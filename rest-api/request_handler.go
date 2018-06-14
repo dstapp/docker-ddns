@@ -54,14 +54,17 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config) Webs
         response.AddrType = "AAAA"
     } else {
         ip, _, err := net.SplitHostPort(r.RemoteAddr)
+        
         if err != nil {
             response.Success = false
             response.Message = fmt.Sprintf("%q is neither a valid IPv4 nor IPv6 address", r.RemoteAddr)
             log.Println(fmt.Sprintf("Invalid address: %q", r.RemoteAddr))
             return response
         }
+        
+        // @todo refactor this code to remove duplication
         if ipparser.ValidIP4(ip) {
-           response.AddrType = "A"
+            response.AddrType = "A"
             response.Address = ip
         } else if ipparser.ValidIP6(ip) {
             response.AddrType = "AAAA"
