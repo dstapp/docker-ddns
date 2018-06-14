@@ -1,6 +1,7 @@
 # Dynamic DNS with Docker, Go and Bind9
 
 ![DockerHub build status](https://dockerbuildbadges.quelltext.eu/status.svg?organization=davd&repository=docker-ddns)
+![Travis build status](https://travis-ci.com/dprandzioch/docker-ddns.svg?branch=master)
 
 This package allows you to set up a server for dynamic DNS using docker with a
 few simple commands. You don't have to worry about nameserver setup, REST API
@@ -26,19 +27,25 @@ docker run -it -d \
     davd/docker-ddns:latest
 ```
 
-If you want to persist DNS configuration across container recreation, add `-v /somefolder:/var/cache/bind`. If you are experiencing any issues updating DNS configuration using the API
-(`NOTAUTH` and `SERVFAIL`), make sure to add writing permissions for root (UID=0) to your persistent storage (e.g. `chmod -R a+w /somefolder`).
+If you want to persist DNS configuration across container recreation, add `-v /somefolder:/var/cache/bind`. If you are experiencing any 
+issues updating DNS configuration using the API (`NOTAUTH` and `SERVFAIL`), make sure to add writing permissions for root (UID=0) to your 
+persistent storage (e.g. `chmod -R a+w /somefolder`).
+
+You can also use Compose / Swarm to set up this project. For more information and an example `docker-compose.yml` with persistent data 
+storage, please refer to this file: https://github.com/dprandzioch/docker-ddns/blob/master/docker-compose.yml
 
 ### Build from source / GitHub
 
 ```
 git clone https://github.com/dprandzioch/docker-ddns
+git checkout master # Make sure to build the latest stable release
 cd docker-ddns
 $EDITOR envfile
 make deploy
 ```
 
-Make sure to change all environment variables in `envfile` to match your needs. Some more information can be found here: https://www.davd.eu/build-your-own-dynamic-dns-in-5-minutes/
+Make sure to change all environment variables in `envfile` to match your needs. Some more information can be found here: 
+https://www.davd.eu/build-your-own-dynamic-dns-in-5-minutes/
 
 ## Exposed ports
 
