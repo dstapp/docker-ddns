@@ -26,8 +26,12 @@ docker run -it -d \
     davd/docker-ddns:latest
 ```
 
-If you want to persist DNS configuration across container recreation, add `-v /somefolder:/var/cache/bind`. If you are experiencing any issues updating DNS configuration using the API
-(`NOTAUTH` and `SERVFAIL`), make sure to add writing permissions for root (UID=0) to your persistent storage (e.g. `chmod -R a+w /somefolder`).
+If you want to persist DNS configuration across container recreation, add `-v /somefolder:/var/cache/bind`. If you are experiencing any 
+issues updating DNS configuration using the API (`NOTAUTH` and `SERVFAIL`), make sure to add writing permissions for root (UID=0) to your 
+persistent storage (e.g. `chmod -R a+w /somefolder`).
+
+You can also use Compose / Swarm to set up this project. For more information and an example `docker-compose.yml` with persistent data 
+storage, please refer to this file: https://github.com/dprandzioch/docker-ddns/blob/master/docker-compose.yml
 
 ### Build from source / GitHub
 
@@ -38,7 +42,8 @@ $EDITOR envfile
 make deploy
 ```
 
-Make sure to change all environment variables in `envfile` to match your needs. Some more information can be found here: https://www.davd.eu/build-your-own-dynamic-dns-in-5-minutes/
+Make sure to change all environment variables in `envfile` to match your needs. Some more information can be found here: 
+https://www.davd.eu/build-your-own-dynamic-dns-in-5-minutes/
 
 ## Exposed ports
 

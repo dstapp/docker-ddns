@@ -1,5 +1,6 @@
 [1.3.0]
 * Add basic CI integration
+* Add usage example for docker-compose
 
 [1.2.1]
 * Fix permissions of /var/cache/bind on container startup
