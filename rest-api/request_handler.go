@@ -3,6 +3,7 @@ package main
 import (
     "log"
     "fmt"
+    "net"
     "net/http"
     "strings"
 
@@ -52,10 +53,28 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config) Webs
     } else if ipparser.ValidIP6(response.Address) {
         response.AddrType = "AAAA"
     } else {
-        response.Success = false
-        response.Message = fmt.Sprintf("%s is neither a valid IPv4 nor IPv6 address", response.Address)
-        log.Println(fmt.Sprintf("Invalid address: %s", response.Address))
-        return response
+        ip, _, err := net.SplitHostPort(r.RemoteAddr)
+        
+        if err != nil {
+            response.Success = false
+            response.Message = fmt.Sprintf("%q is neither a valid IPv4 nor IPv6 address", r.RemoteAddr)
+            log.Println(fmt.Sprintf("Invalid address: %q", r.RemoteAddr))
+            return response
+        }
+        
+        // @todo refactor this code to remove duplication
+        if ipparser.ValidIP4(ip) {
+            response.AddrType = "A"
+            response.Address = ip
+        } else if ipparser.ValidIP6(ip) {
+            response.AddrType = "AAAA"
+            response.Address = ip
+        } else {
+            response.Success = false
+            response.Message = fmt.Sprintf("%s is neither a valid IPv4 nor IPv6 address", response.Address)
+            log.Println(fmt.Sprintf("Invalid address: %s", response.Address))
+            return response
+        }
     }
 
     response.Success = true
