@@ -38,6 +38,7 @@ storage, please refer to this file: https://github.com/dprandzioch/docker-ddns/b
 
 ```
 git clone https://github.com/dprandzioch/docker-ddns
+git checkout master # Make sure to build the latest stable release
 cd docker-ddns
 $EDITOR envfile
 make deploy
