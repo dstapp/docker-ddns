@@ -3,10 +3,6 @@
 ![DockerHub build status](https://dockerbuildbadges.quelltext.eu/status.svg?organization=davd&repository=docker-ddns)
 ![Travis build status](https://travis-ci.com/dprandzioch/docker-ddns.svg?branch=master)
 
-This package allows you to set up a server for dynamic DNS using docker with a
-few simple commands. You don't have to worry about nameserver setup, REST API
-and all that stuff.
-
 This package allows you to set up a dynamic DNS server that allows you to connect to
 devices at home from anywhere in the world. All you need is a cheap VPS, a domain and access to it's nameserver.
 
