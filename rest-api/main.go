@@ -65,12 +65,7 @@ func UpdateRecord(domain string, ipaddr string, addrType string) string {
 
     w.WriteString(fmt.Sprintf("server %s\n", appConfig.Server))
     w.WriteString(fmt.Sprintf("zone %s\n", appConfig.Zone))
-    if addrType == "A" {
-	    w.WriteString(fmt.Sprintf("update delete %s.%s A\n", domain, appConfig.Domain))
-    }
-    if addrType == "AAAA" {
-	    w.WriteString(fmt.Sprintf("update delete %s.%s AAAA\n", domain, appConfig.Domain))
-    }
+    w.WriteString(fmt.Sprintf("update delete %s.%s %s\n", domain, appConfig.Domain, addrType))
     w.WriteString(fmt.Sprintf("update add %s.%s %v %s %s\n", domain, appConfig.Domain, appConfig.RecordTTL, addrType, ipaddr))
     w.WriteString("send\n")
 
