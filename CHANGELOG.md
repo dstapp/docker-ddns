@@ -1,3 +1,9 @@
+[1.3.0]
+* Add basic CI integration
+* Add usage example for docker-compose
+* Use request IP address when no `addr` is provided for better compatibility with DD-WRT (by vdweegen)
+* Allow IPv4 and IPv6 addresses to co-exist for the same domain
+
 [1.2.1]
 * Fix permissions of /var/cache/bind on container startup
 * Create zone options if not done, fixing support for persistent volumes
