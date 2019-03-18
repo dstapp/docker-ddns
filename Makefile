@@ -17,6 +17,12 @@ api_test:
 	curl "http://localhost:8080/update?secret=changeme&domain=foo&addr=1.2.3.4"
 	dig @localhost foo.example.org
 
+api_test_46:
+	curl "http://localhost:8080/update?secret=changeme&domain=foo&addr=1.2.3.4"
+	curl "http://localhost:8080/update?secret=changeme&domain=foo&addr=2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+	dig @localhost foo.example.org
+	dig @localhost AAAA foo.example.org
+
 api_test_multiple_domains:
 	curl "http://localhost:8080/update?secret=changeme&domain=foo,bar,baz&addr=1.2.3.4"
 	dig @localhost foo.example.org
