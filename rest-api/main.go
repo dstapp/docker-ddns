@@ -21,9 +21,42 @@ func main() {
 
     router := mux.NewRouter().StrictSlash(true)
     router.HandleFunc("/update", Update).Methods("GET")
+    router.HandleFunc("/nic/update", DynUpdate).Methods("GET")
+    router.HandleFunc("/v2/update", DynUpdate).Methods("GET")
+    router.HandleFunc("/v3/update", DynUpdate).Methods("GET")
 
     log.Println(fmt.Sprintf("Serving dyndns REST services on 0.0.0.0:8080..."))
     log.Fatal(http.ListenAndServe(":8080", router))
+}
+
+func DynUpdate(w http.ResponseWriter, r *http.Request) {
+    response := BuildDynResponseFromRequest(r, appConfig)
+
+    if response.Success == false {
+        if response.Message == "Domain not set" {
+            w.Write([]byte("notfqdn\n"))
+        } else {
+            w.Write([]byte("badauth\n"))
+        }
+        return
+    }
+
+    for _, domain := range response.Domains {
+        result := UpdateRecord(domain, response.Address, response.AddrType)
+
+        if result != "" {
+            response.Success = false
+            response.Message = result
+
+            w.Write([]byte("dnserr\n"))
+            return
+        }
+    }
+
+    response.Success = true
+    response.Message = fmt.Sprintf("Updated %s record for %s to IP address %s", response.AddrType, response.Domain, response.Address)
+
+    w.Write([]byte(fmt.Sprintf("good %s\n", response.Address)))
 }
 
 func Update(w http.ResponseWriter, r *http.Request) {
