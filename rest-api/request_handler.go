@@ -6,8 +6,6 @@ import (
 	"net"
 	"net/http"
 	"strings"
-
-	"dyndns/ipparser"
 )
 
 type RequestDataExtractor struct {
@@ -51,9 +49,9 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extr
 	// kept in the response for compatibility reasons
 	response.Domain = strings.Join(response.Domains, ",")
 
-	if ipparser.ValidIP4(response.Address) {
+	if ValidIP4(response.Address) {
 		response.AddrType = "A"
-	} else if ipparser.ValidIP6(response.Address) {
+	} else if ValidIP6(response.Address) {
 		response.AddrType = "AAAA"
 	} else {
 		ip, _, err := net.SplitHostPort(r.RemoteAddr)
@@ -66,10 +64,10 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extr
 		}
 
 		// @todo refactor this code to remove duplication
-		if ipparser.ValidIP4(ip) {
+		if ValidIP4(ip) {
 			response.AddrType = "A"
 			response.Address = ip
-		} else if ipparser.ValidIP6(ip) {
+		} else if ValidIP6(ip) {
 			response.AddrType = "AAAA"
 			response.Address = ip
 		} else {
