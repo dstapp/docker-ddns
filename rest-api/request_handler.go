@@ -7,7 +7,7 @@ import (
     "net/http"
     "strings"
 
-    "./ipparser"
+    "dyndns/ipparser"
 )
 
 type RequestDataExtractor struct {

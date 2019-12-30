@@ -2,7 +2,7 @@ package main
 
 import (
     "testing"
-    "./ipparser"
+    "dyndns/ipparser"
 )
 
 func TestValidIP4ToReturnTrueOnValidAddress(t *testing.T) {
