@@ -5,12 +5,30 @@ import (
     "net/http"
 )
 
+var defaultExtractor = RequestDataExtractor{
+    Address: func(r *http.Request) string { return r.URL.Query().Get("addr") },
+    Secret:  func(r *http.Request) string { return r.URL.Query().Get("secret") },
+    Domain:  func(r *http.Request) string { return r.URL.Query().Get("domain") },
+}
+
+var dynExtractor = RequestDataExtractor{
+    Address: func(r *http.Request) string { return r.URL.Query().Get("myip") },
+    Secret:  func(r *http.Request) string {     _, sharedSecret, ok := r.BasicAuth()
+        if !ok || sharedSecret == "" {
+            sharedSecret = r.URL.Query().Get("password")
+        }
+
+        return sharedSecret
+    },
+    Domain:  func(r *http.Request) string { return r.URL.Query().Get("hostname") },
+}
+
 func TestBuildWebserviceResponseFromRequestToReturnValidObject(t *testing.T) {
     var appConfig = &Config{}
     appConfig.SharedSecret = "changeme"
 
-    req, _ := http.NewRequest("POST", "/update?secret=changeme&domain=foo&addr=1.2.3.4", nil)
-    result := BuildWebserviceResponseFromRequest(req, appConfig)
+    req, _ := http.NewRequest("GET", "/update?secret=changeme&domain=foo&addr=1.2.3.4", nil)
+    result := BuildWebserviceResponseFromRequest(req, appConfig, defaultExtractor)
 
     if result.Success != true {
         t.Fatalf("Expected WebserviceResponse.Success to be true")
@@ -33,8 +51,8 @@ func TestBuildWebserviceResponseFromRequestToReturnInvalidObjectWhenNoSecretIsGi
     var appConfig = &Config{}
     appConfig.SharedSecret = "changeme"
 
-    req, _ := http.NewRequest("POST", "/update", nil)
-    result := BuildWebserviceResponseFromRequest(req, appConfig)
+    req, _ := http.NewRequest("GET", "/update", nil)
+    result := BuildWebserviceResponseFromRequest(req, appConfig, defaultExtractor)
 
     if result.Success != false {
         t.Fatalf("Expected WebserviceResponse.Success to be false")
@@ -45,8 +63,8 @@ func TestBuildWebserviceResponseFromRequestToReturnInvalidObjectWhenInvalidSecre
     var appConfig = &Config{}
     appConfig.SharedSecret = "changeme"
 
-    req, _ := http.NewRequest("POST", "/update?secret=foo", nil)
-    result := BuildWebserviceResponseFromRequest(req, appConfig)
+    req, _ := http.NewRequest("GET", "/update?secret=foo", nil)
+    result := BuildWebserviceResponseFromRequest(req, appConfig, defaultExtractor)
 
     if result.Success != false {
         t.Fatalf("Expected WebserviceResponse.Success to be false")
@@ -57,8 +75,8 @@ func TestBuildWebserviceResponseFromRequestToReturnInvalidObjectWhenNoDomainIsGi
     var appConfig = &Config{}
     appConfig.SharedSecret = "changeme"
 
-    req, _ := http.NewRequest("POST", "/update?secret=changeme", nil)
-    result := BuildWebserviceResponseFromRequest(req, appConfig)
+    req, _ := http.NewRequest("GET", "/update?secret=changeme", nil)
+    result := BuildWebserviceResponseFromRequest(req, appConfig, defaultExtractor)
 
     if result.Success != false {
         t.Fatalf("Expected WebserviceResponse.Success to be false")
@@ -69,8 +87,8 @@ func TestBuildWebserviceResponseFromRequestWithMultipleDomains(t *testing.T) {
     var appConfig = &Config{}
     appConfig.SharedSecret = "changeme"
 
-    req, _ := http.NewRequest("POST", "/update?secret=changeme&domain=foo,bar&addr=1.2.3.4", nil)
-    result := BuildWebserviceResponseFromRequest(req, appConfig)
+    req, _ := http.NewRequest("GET", "/update?secret=changeme&domain=foo,bar&addr=1.2.3.4", nil)
+    result := BuildWebserviceResponseFromRequest(req, appConfig, defaultExtractor)
 
     if result.Success != true {
         t.Fatalf("Expected WebserviceResponse.Success to be true")
@@ -93,8 +111,8 @@ func TestBuildWebserviceResponseFromRequestWithMalformedMultipleDomains(t *testi
     var appConfig = &Config{}
     appConfig.SharedSecret = "changeme"
 
-    req, _ := http.NewRequest("POST", "/update?secret=changeme&domain=foo,&addr=1.2.3.4", nil)
-    result := BuildWebserviceResponseFromRequest(req, appConfig)
+    req, _ := http.NewRequest("GET", "/update?secret=changeme&domain=foo,&addr=1.2.3.4", nil)
+    result := BuildWebserviceResponseFromRequest(req, appConfig, defaultExtractor)
 
     if result.Success != false {
         t.Fatalf("Expected WebserviceResponse.Success to be false")
@@ -106,7 +124,7 @@ func TestBuildWebserviceResponseFromRequestToReturnInvalidObjectWhenNoAddressIsG
     appConfig.SharedSecret = "changeme"
 
     req, _ := http.NewRequest("POST", "/update?secret=changeme&domain=foo", nil)
-    result := BuildWebserviceResponseFromRequest(req, appConfig)
+    result := BuildWebserviceResponseFromRequest(req, appConfig, defaultExtractor)
 
     if result.Success != false {
         t.Fatalf("Expected WebserviceResponse.Success to be false")
@@ -117,8 +135,46 @@ func TestBuildWebserviceResponseFromRequestToReturnInvalidObjectWhenInvalidAddre
     var appConfig = &Config{}
     appConfig.SharedSecret = "changeme"
 
-    req, _ := http.NewRequest("POST", "/update?secret=changeme&domain=foo&addr=1.41:2", nil)
-    result := BuildWebserviceResponseFromRequest(req, appConfig)
+    req, _ := http.NewRequest("GET", "/update?secret=changeme&domain=foo&addr=1.41:2", nil)
+    result := BuildWebserviceResponseFromRequest(req, appConfig, defaultExtractor)
+
+    if result.Success != false {
+        t.Fatalf("Expected WebserviceResponse.Success to be false")
+    }
+}
+
+func TestBuildWebserviceResponseFromRequestToReturnValidObjectWithDynExtractor(t *testing.T) {
+    var appConfig = &Config{}
+    appConfig.SharedSecret = "changeme"
+
+    req, _ := http.NewRequest("GET", "/nic/update?hostname=foo&myip=1.2.3.4", nil)
+    req.Header.Add("Authorization", "Basic dXNlcm5hbWU6Y2hhbmdlbWU=") // This is the base-64 encoded value of "username:changeme"
+
+    result := BuildWebserviceResponseFromRequest(req, appConfig, dynExtractor)
+
+    if result.Success != true {
+        t.Fatalf("Expected WebserviceResponse.Success to be true")
+    }
+
+    if result.Domain != "foo" {
+        t.Fatalf("Expected WebserviceResponse.Domain to be foo")
+    }
+
+    if result.Address != "1.2.3.4" {
+        t.Fatalf("Expected WebserviceResponse.Address to be 1.2.3.4")
+    }
+
+    if result.AddrType != "A" {
+        t.Fatalf("Expected WebserviceResponse.AddrType to be A")
+    }
+}
+
+func TestBuildWebserviceResponseFromRequestToReturnInvalidObjectWhenNoSecretIsGivenWithDynExtractor(t *testing.T) {
+    var appConfig = &Config{}
+    appConfig.SharedSecret = "changeme"
+
+    req, _ := http.NewRequest("GET", "/nic/update", nil)
+    result := BuildWebserviceResponseFromRequest(req, appConfig, dynExtractor)
 
     if result.Success != false {
         t.Fatalf("Expected WebserviceResponse.Success to be false")

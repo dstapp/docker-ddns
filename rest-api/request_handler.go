@@ -1,14 +1,20 @@
 package main
 
 import (
-    "log"
     "fmt"
+    "log"
     "net"
     "net/http"
     "strings"
 
     "dyndns/ipparser"
 )
+
+type RequestDataExtractor struct {
+    Address func (request *http.Request) string
+    Secret func (request *http.Request) string
+    Domain func (request *http.Request) string
+}
 
 type WebserviceResponse struct {
     Success bool
@@ -19,15 +25,12 @@ type WebserviceResponse struct {
     AddrType string
 }
 
-func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config) WebserviceResponse {
+func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extractors RequestDataExtractor) WebserviceResponse {
     response := WebserviceResponse{}
 
-    var sharedSecret string
-
-    vals := r.URL.Query()
-    sharedSecret = vals.Get("secret")
-    response.Domains = strings.Split(vals.Get("domain"), ",")
-    response.Address = vals.Get("addr")
+    sharedSecret := extractors.Secret(r)
+    response.Domains = strings.Split(extractors.Domain(r), ",")
+    response.Address = extractors.Address(r)
 
     if sharedSecret != appConfig.SharedSecret {
         log.Println(fmt.Sprintf("Invalid shared secret: %s", sharedSecret))
