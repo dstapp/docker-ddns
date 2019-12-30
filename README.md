@@ -123,6 +123,51 @@ https://help.dyn.com/remote-access-api/perform-update/
 ```
 
 
+<<<<<<< HEAD
+=======
+### DynDNS compatible API
+
+This package contains a DynDNS compatible handler for convenience and for use cases
+where clients cannot be modified to use the JSON responses and/or URL scheme outlined
+above.
+
+This has been tested with a number of routers. Just point the router to your DDNS domain
+for updates.
+
+The handlers will listen on:
+* /nic/update
+* /v2/update
+* /v3/update
+
+
+**The username is not validated at all so you can use anything as a username**
+**Password is the shared secret provided as an ENV variable**
+
+#### Examples
+
+An example on the ddclient (Linux DDNS client) based Ubiquiti router line:
+
+set service dns dynamic interface eth0 service dyndns host-name <your-ddns-hostname-to-be-updated>
+set service dns dynamic interface eth0 service dyndns login <anything-as-username-is-not-validated>
+set service dns dynamic interface eth0 service dyndns password <shared-secret>
+set service dns dynamic interface eth0 service dyndns protocol dyndns2
+set service dns dynamic interface eth0 service dyndns server <your-ddns-server>
+
+Optional if you used this behind an HTTPS reverse proxy like I do:
+
+set service dns dynamic interface eth0 service dyndns options ssl=true
+
+This also means that DDCLIENT works out of the box and Linux based devices should work.
+
+D-Link DIR-842:
+
+Another router that has been tested is from the D-Link router line where you need to fill the 
+details in on the Web Interface. The values are self-explanatory. Under the server (once you chosen Manual)
+you need to enter you DDNS server's hostname or IP. The protocol used by the router will be the 
+dyndns2 by default and cannot be changed.
+
+
+>>>>>>> 9a5f524b6d026696c8aa6b5fa491104279e08c9f
 ## Accessing the REST API log
 
 Just run

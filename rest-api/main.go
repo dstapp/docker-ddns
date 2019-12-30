@@ -32,17 +32,18 @@ func main() {
 }
 
 func DynUpdate(w http.ResponseWriter, r *http.Request) {
-    extractor := RequestDataExtractor{
-        Address: func(r *http.Request) string { return r.URL.Query().Get("myip") },
-        Secret:  func(r *http.Request) string {     _, sharedSecret, ok := r.BasicAuth()
-            if !ok || sharedSecret == "" {
-                sharedSecret = r.URL.Query().Get("password")
-            }
+	extractor := RequestDataExtractor{
+		Address: func(r *http.Request) string { return r.URL.Query().Get("myip") },
+		Secret: func(r *http.Request) string {
+			_, sharedSecret, ok := r.BasicAuth()
+			if !ok || sharedSecret == "" {
+				sharedSecret = r.URL.Query().Get("password")
+			}
 
-            return sharedSecret
-        },
-        Domain:  func(r *http.Request) string { return r.URL.Query().Get("hostname") },
-    }
+			return sharedSecret
+		},
+		Domain: func(r *http.Request) string { return r.URL.Query().Get("hostname") },
+	}
 	response := BuildWebserviceResponseFromRequest(r, appConfig, extractor)
 
 	if response.Success == false {
