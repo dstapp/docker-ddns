@@ -24,6 +24,7 @@ docker run -it -d \
     -e SHARED_SECRET=changeme \
     -e ZONE=example.org \
     -e RECORD_TTL=3600 \
+    -e RECORD_EXPIRY=86400 \
     --name=dyndns \
     davd/docker-ddns:latest
 ```
@@ -68,6 +69,7 @@ It provides one single GET request, that is used as follows:
 
 http://myhost.mydomain.tld:8080/update?secret=changeme&domain=foo&addr=1.2.3.4
 
+
 ### Fields
 
 * `secret`: The shared secret set in `envfile`
@@ -106,15 +108,19 @@ The handlers will listen on:
 
 An example on the ddclient (Linux DDNS client) based Ubiquiti router line:
 
+```
 set service dns dynamic interface eth0 service dyndns host-name <your-ddns-hostname-to-be-updated>
 set service dns dynamic interface eth0 service dyndns login <anything-as-username-is-not-validated>
 set service dns dynamic interface eth0 service dyndns password <shared-secret>
 set service dns dynamic interface eth0 service dyndns protocol dyndns2
 set service dns dynamic interface eth0 service dyndns server <your-ddns-server>
+```
 
 Optional if you used this behind an HTTPS reverse proxy like I do:
 
+```
 set service dns dynamic interface eth0 service dyndns options ssl=true
+```
 
 This also means that DDCLIENT works out of the box and Linux based devices should work.
 

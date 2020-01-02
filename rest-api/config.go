@@ -12,6 +12,7 @@ type Config struct {
 	Domain         string
 	NsupdateBinary string
 	RecordTTL      int
+	RecordExpiry   int
 }
 
 func (conf *Config) LoadConfig(path string) {

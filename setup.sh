@@ -3,6 +3,7 @@
 [ -z "$SHARED_SECRET" ] && echo "SHARED_SECRET not set" && exit 1;
 [ -z "$ZONE" ] && echo "ZONE not set" && exit 1;
 [ -z "$RECORD_TTL" ] && echo "RECORD_TTL not set" && exit 1;
+[ -z "$RECORD_EXPIRY" ] && echo "RECORD_EXPIRY not set" && exit 1;
 
 if ! grep 'zone "'$ZONE'"' /etc/bind/named.conf > /dev/null
 then
@@ -53,7 +54,8 @@ then
     "Zone": "${ZONE}.",
     "Domain": "${ZONE}",
     "NsupdateBinary": "/usr/bin/nsupdate",
-	"RecordTTL": ${RECORD_TTL}
+    "RecordTTL": ${RECORD_TTL},
+    "RecordExpiry": ${RECORD_EXPIRY}
 }
 EOF
 fi

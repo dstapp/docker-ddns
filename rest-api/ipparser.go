@@ -1,4 +1,4 @@
-package ipparser
+package main
 
 import (
 	"net"
