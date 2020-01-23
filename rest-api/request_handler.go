@@ -52,14 +52,14 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extr
 
 	// kept in the response for compatibility reasons
 	response.Domain = strings.Join(response.Domains, ",")
-	var ip string
-	var err error
 
 	if ipparser.ValidIP4(response.Address) {
 		response.AddrType = "A"
 	} else if ipparser.ValidIP6(response.Address) {
 		response.AddrType = "AAAA"
 	} else {
+		var ip string
+		var err error
 
 		ip, err = getUserIP(r)
 		if ip == "" {
@@ -84,9 +84,10 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extr
 			log.Println(fmt.Sprintf("Invalid address: %s", response.Address))
 			return response
 		}
+
+		response.Address = ip
 	}
 
-	response.Address = ip
 	response.Success = true
 
 	return response
