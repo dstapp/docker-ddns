@@ -51,6 +51,7 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extr
 
 	// kept in the response for compatibility reasons
 	response.Domain = strings.Join(response.Domains, ",")
+	var ip string
 
 	if ipparser.ValidIP4(response.Address) {
 		response.AddrType = "A"
