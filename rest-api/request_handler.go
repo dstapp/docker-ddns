@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -52,6 +53,7 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extr
 	// kept in the response for compatibility reasons
 	response.Domain = strings.Join(response.Domains, ",")
 	var ip string
+	var err error
 
 	if ipparser.ValidIP4(response.Address) {
 		response.AddrType = "A"
@@ -59,7 +61,7 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extr
 		response.AddrType = "AAAA"
 	} else {
 
-		ip, err := getUserIP(r)
+		ip, err = getUserIP(r)
 		if ip == "" {
 			ip, _, err = net.SplitHostPort(r.RemoteAddr)
 		}
@@ -90,7 +92,7 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extr
 	return response
 }
 
-func getUserIP(r *http.Request) string {
+func getUserIP(r *http.Request) (string, error) {
 	for _, h := range []string{"X-Real-Ip", "X-Forwarded-For"} {
 		addresses := strings.Split(r.Header.Get(h), ",")
 		// march from right to left until we get a public address
@@ -106,7 +108,7 @@ func getUserIP(r *http.Request) string {
 			return ip, nil
 		}
 	}
-	return "", "no match"
+	return "", errors.New("no match")
 }
 
 //ipRange - a structure that holds the start and end of a range of ip addresses
