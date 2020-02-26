@@ -53,7 +53,7 @@ func TestBuildWebserviceResponseFromRequestWithXRealIPHeaderToReturnValidObject(
 	appConfig.SharedSecret = "changeme"
 
 	req, _ := http.NewRequest("GET", "/update?secret=changeme&domain=foo", nil)
-	req.Header.Add("X-Real-Ip", "1.2.3.4") // This is
+	req.Header.Add("X-Real-Ip", "1.2.3.4")
 	result := BuildWebserviceResponseFromRequest(req, appConfig, defaultExtractor)
 
 	if result.Success != true {
@@ -78,7 +78,7 @@ func TestBuildWebserviceResponseFromRequestWithXForwardedForHeaderToReturnValidO
 	appConfig.SharedSecret = "changeme"
 
 	req, _ := http.NewRequest("GET", "/update?secret=changeme&domain=foo", nil)
-	req.Header.Add("X-Forwarded-For", "1.2.3.4") // This is
+	req.Header.Add("X-Forwarded-For", "1.2.3.4")
 	result := BuildWebserviceResponseFromRequest(req, appConfig, defaultExtractor)
 
 	if result.Success != true {
