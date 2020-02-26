@@ -48,6 +48,56 @@ func TestBuildWebserviceResponseFromRequestToReturnValidObject(t *testing.T) {
 	}
 }
 
+func TestBuildWebserviceResponseFromRequestWithXRealIPHeaderToReturnValidObject(t *testing.T) {
+	var appConfig = &Config{}
+	appConfig.SharedSecret = "changeme"
+
+	req, _ := http.NewRequest("GET", "/update?secret=changeme&domain=foo", nil)
+	req.Header.Add("X-Real-Ip", "1.2.3.4") // This is
+	result := BuildWebserviceResponseFromRequest(req, appConfig, defaultExtractor)
+
+	if result.Success != true {
+		t.Fatalf("Expected WebserviceResponse.Success to be true")
+	}
+
+	if result.Domain != "foo" {
+		t.Fatalf("Expected WebserviceResponse.Domain to be foo")
+	}
+
+	if result.Address != "1.2.3.4" {
+		t.Fatalf("Expected WebserviceResponse.Address to be 1.2.3.4")
+	}
+
+	if result.AddrType != "A" {
+		t.Fatalf("Expected WebserviceResponse.AddrType to be A")
+	}
+}
+
+func TestBuildWebserviceResponseFromRequestWithXForwardedForHeaderToReturnValidObject(t *testing.T) {
+	var appConfig = &Config{}
+	appConfig.SharedSecret = "changeme"
+
+	req, _ := http.NewRequest("GET", "/update?secret=changeme&domain=foo", nil)
+	req.Header.Add("X-Forwarded-For", "1.2.3.4") // This is
+	result := BuildWebserviceResponseFromRequest(req, appConfig, defaultExtractor)
+
+	if result.Success != true {
+		t.Fatalf("Expected WebserviceResponse.Success to be true")
+	}
+
+	if result.Domain != "foo" {
+		t.Fatalf("Expected WebserviceResponse.Domain to be foo")
+	}
+
+	if result.Address != "1.2.3.4" {
+		t.Fatalf("Expected WebserviceResponse.Address to be 1.2.3.4")
+	}
+
+	if result.AddrType != "A" {
+		t.Fatalf("Expected WebserviceResponse.AddrType to be A")
+	}
+}
+
 func TestBuildWebserviceResponseFromRequestToReturnInvalidObjectWhenNoSecretIsGiven(t *testing.T) {
 	var appConfig = &Config{}
 	appConfig.SharedSecret = "changeme"
