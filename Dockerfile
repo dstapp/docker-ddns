@@ -1,4 +1,4 @@
-FROM debian:stretch as builder
+FROM debian:buster as builder
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 	apt-get install -q -y golang git-core && \
 	apt-get clean
@@ -8,7 +8,7 @@ RUN mkdir -p /root/go/src
 COPY rest-api /root/go/src/dyndns
 RUN cd /root/go/src/dyndns && go get && go test -v
 
-FROM debian:stretch
+FROM debian:buster-slim
 MAINTAINER David Prandzioch <hello+ddns@davd.eu>
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
