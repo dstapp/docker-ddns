@@ -39,11 +39,11 @@ func TestBuildWebserviceResponseFromRequestToReturnValidObject(t *testing.T) {
 		t.Fatalf("Expected WebserviceResponse.Domain to be foo")
 	}
 
-	if result.Address != "1.2.3.4" {
+	if result.Addresses[0].Address != "1.2.3.4" {
 		t.Fatalf("Expected WebserviceResponse.Address to be 1.2.3.4")
 	}
 
-	if result.AddrType != "A" {
+	if result.Addresses[0].AddrType != "A" {
 		t.Fatalf("Expected WebserviceResponse.AddrType to be A")
 	}
 }
@@ -64,11 +64,11 @@ func TestBuildWebserviceResponseFromRequestWithXRealIPHeaderToReturnValidObject(
 		t.Fatalf("Expected WebserviceResponse.Domain to be foo")
 	}
 
-	if result.Address != "1.2.3.4" {
+	if result.Addresses[0].Address != "1.2.3.4" {
 		t.Fatalf("Expected WebserviceResponse.Address to be 1.2.3.4")
 	}
 
-	if result.AddrType != "A" {
+	if result.Addresses[0].AddrType != "A" {
 		t.Fatalf("Expected WebserviceResponse.AddrType to be A")
 	}
 }
@@ -86,15 +86,15 @@ func TestBuildWebserviceResponseFromRequestWithXForwardedForHeaderToReturnValidO
 	}
 
 	if result.Domain != "foo" {
-		t.Fatalf("Expected WebserviceResponse.Domain to be foo")
+		t.Fatalf("Expected WebserviceResponse.Domain to be foo but was %s", result.Domain)
 	}
 
-	if result.Address != "1.2.3.4" {
-		t.Fatalf("Expected WebserviceResponse.Address to be 1.2.3.4")
+	if result.Addresses[0].Address != "1.2.3.4" {
+		t.Fatalf("Expected WebserviceResponse.Address to be 1.2.3.4 but was %s", result.Addresses[0].Address)
 	}
 
-	if result.AddrType != "A" {
-		t.Fatalf("Expected WebserviceResponse.AddrType to be A")
+	if result.Addresses[0].AddrType != "A" {
+		t.Fatalf("Expected WebserviceResponse.AddrType to be A but was %s", result.Addresses[0].AddrType)
 	}
 }
 
@@ -208,15 +208,15 @@ func TestBuildWebserviceResponseFromRequestToReturnValidObjectWithDynExtractor(t
 	}
 
 	if result.Domain != "foo" {
-		t.Fatalf("Expected WebserviceResponse.Domain to be foo")
+		t.Fatalf("Expected WebserviceResponse.Domain to be foo but was %s", result.Domain)
 	}
 
-	if result.Address != "1.2.3.4" {
-		t.Fatalf("Expected WebserviceResponse.Address to be 1.2.3.4")
+	if result.Addresses[0].Address != "1.2.3.4" {
+		t.Fatalf("Expected WebserviceResponse.Address to be 1.2.3.4 but was %s", result.Addresses[0].Address)
 	}
 
-	if result.AddrType != "A" {
-		t.Fatalf("Expected WebserviceResponse.AddrType to be A")
+	if result.Addresses[0].AddrType != "A" {
+		t.Fatalf("Expected WebserviceResponse.AddrType to be A but was %s", result.Addresses[0].AddrType)
 	}
 }
 

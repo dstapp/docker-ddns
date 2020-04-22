@@ -18,13 +18,28 @@ type RequestDataExtractor struct {
 	Domain  func(request *http.Request) string
 }
 
-type WebserviceResponse struct {
-	Success  bool
-	Message  string
-	Domain   string
-	Domains  []string
+type Address struct {
 	Address  string
 	AddrType string
+}
+
+type WebserviceResponse struct {
+	Success   bool
+	Message   string
+	Domain    string
+	Domains   []string
+	Addresses []Address
+	//Address   string
+	//AddrType  string
+}
+
+func ParseAddress(address string) (Address, error) {
+	if ipparser.ValidIP4(address) {
+		return Address{Address: address, AddrType: "A"}, nil
+	} else if ipparser.ValidIP6(address) {
+		return Address{Address: address, AddrType: "AAAA"}, nil
+	}
+	return Address{}, errors.New(fmt.Sprintf("Invalid ip address: %s", address))
 }
 
 func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extractors RequestDataExtractor) WebserviceResponse {
@@ -32,7 +47,12 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extr
 
 	sharedSecret := extractors.Secret(r)
 	response.Domains = strings.Split(extractors.Domain(r), ",")
-	response.Address = extractors.Address(r)
+	for _, address := range strings.Split(extractors.Address(r), ",") {
+		var parsedAddress, error = ParseAddress(address);
+		if error == nil {
+			response.Addresses = append(response.Addresses, parsedAddress)
+		}
+	}
 
 	if sharedSecret != appConfig.SharedSecret {
 		log.Println(fmt.Sprintf("Invalid shared secret: %s", sharedSecret))
@@ -53,39 +73,32 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extr
 	// kept in the response for compatibility reasons
 	response.Domain = strings.Join(response.Domains, ",")
 
-	if ipparser.ValidIP4(response.Address) {
-		response.AddrType = "A"
-	} else if ipparser.ValidIP6(response.Address) {
-		response.AddrType = "AAAA"
-	} else {
-		var ip string
-		var err error
+		if (len(response.Addresses) == 0)  {
+			var ip string
+			var err error
 
-		ip, err = getUserIP(r)
-		if ip == "" {
-			ip, _, err = net.SplitHostPort(r.RemoteAddr)
-		}
+			ip, err = getUserIP(r)
+			if ip == "" {
+				ip, _, err = net.SplitHostPort(r.RemoteAddr)
+			}
 
-		if err != nil {
-			response.Success = false
-			response.Message = fmt.Sprintf("%q is neither a valid IPv4 nor IPv6 address", r.RemoteAddr)
-			log.Println(fmt.Sprintf("Invalid address: %q", r.RemoteAddr))
-			return response
-		}
+			if err != nil {
+				response.Success = false
+				response.Message = fmt.Sprintf("%q is neither a valid IPv4 nor IPv6 address", r.RemoteAddr)
+				log.Println(fmt.Sprintf("Invalid address: %q", r.RemoteAddr))
+				return response
+			}
 
-		// @todo refactor this code to remove duplication
-		if ipparser.ValidIP4(ip) {
-			response.AddrType = "A"
-		} else if ipparser.ValidIP6(ip) {
-			response.AddrType = "AAAA"
-		} else {
-			response.Success = false
-			response.Message = fmt.Sprintf("%s is neither a valid IPv4 nor IPv6 address", response.Address)
-			log.Println(fmt.Sprintf("Invalid address: %s", response.Address))
-			return response
-		}
-
-		response.Address = ip
+			var address Address
+			address, err = ParseAddress(ip)
+			if err == nil {
+				response.Addresses = append(response.Addresses, address);
+			} else {
+				response.Success = false
+				response.Message = fmt.Sprintf("%s is neither a valid IPv4 nor IPv6 address", address)
+				log.Println(fmt.Sprintf(err.Error()))
+				return response
+			}
 	}
 
 	response.Success = true

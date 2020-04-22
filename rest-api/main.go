@@ -55,22 +55,24 @@ func DynUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, domain := range response.Domains {
-		result := UpdateRecord(domain, response.Address, response.AddrType)
+	for _, address := range response.Addresses {
+		for _, domain := range response.Domains {
+			result := UpdateRecord(domain, address.Address, address.AddrType)
 
-		if result != "" {
-			response.Success = false
-			response.Message = result
+			if result != "" {
+				response.Success = false
+				response.Message = result
 
-			w.Write([]byte("dnserr\n"))
-			return
+				w.Write([]byte("dnserr\n"))
+				return
+			}
 		}
+
+		response.Success = true
+		response.Message = fmt.Sprintf("Updated %s record for %s to IP address %s", address.AddrType, response.Domain, address.Address)
+
+		w.Write([]byte(fmt.Sprintf("good %s\n", address.Address)))
 	}
-
-	response.Success = true
-	response.Message = fmt.Sprintf("Updated %s record for %s to IP address %s", response.AddrType, response.Domain, response.Address)
-
-	w.Write([]byte(fmt.Sprintf("good %s\n", response.Address)))
 }
 
 func Update(w http.ResponseWriter, r *http.Request) {
@@ -86,20 +88,25 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, domain := range response.Domains {
-		result := UpdateRecord(domain, response.Address, response.AddrType)
+	for _, address := range response.Addresses {
+		for _, domain := range response.Domains {
+			result := UpdateRecord(domain, address.Address, address.AddrType)
 
-		if result != "" {
-			response.Success = false
-			response.Message = result
+			if result != "" {
+				response.Success = false
+				response.Message = result
 
-			json.NewEncoder(w).Encode(response)
-			return
+				json.NewEncoder(w).Encode(response)
+				return
+			}
 		}
-	}
 
-	response.Success = true
-	response.Message = fmt.Sprintf("Updated %s record for %s to IP address %s", response.AddrType, response.Domain, response.Address)
+		response.Success = true
+		if (len(response.Message) == 0) {
+			response.Message += "; ";
+		}
+		response.Message += fmt.Sprintf("Updated %s record for %s to IP address %s", address.AddrType, response.Domain, address.Address)
+	}
 
 	json.NewEncoder(w).Encode(response)
 }
