@@ -46,7 +46,7 @@ make deploy
 ```
 
 Make sure to change all environment variables in `envfile` to match your needs. Some more information can be found here: 
-https://www.davd.eu/build-your-own-dynamic-dns-in-5-minutes/
+https://www.davd.io/build-your-own-dynamic-dns-in-5-minutes/
 
 ## Exposed ports
 
