@@ -21,6 +21,15 @@ type WebserviceResponse struct {
 	AddrType string
 }
 
+func addrType(address string) string {
+	if ipparser.ValidIP4(address) {
+		return "A"
+	} else if ipparser.ValidIP6(address) {
+		return "AAAA"
+	}
+	return ""
+}
+
 func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extractors requestDataExtractor) WebserviceResponse {
 	response := WebserviceResponse{}
 
@@ -47,39 +56,25 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extr
 	// kept in the response for compatibility reasons
 	response.Domain = strings.Join(response.Domains, ",")
 
-	if ipparser.ValidIP4(response.Address) {
-		response.AddrType = "A"
-	} else if ipparser.ValidIP6(response.Address) {
-		response.AddrType = "AAAA"
-	} else {
-		var ip string
-		var err error
-
-		ip, err = getUserIP(r)
+	response.AddrType = addrType(response.Address)
+	if response.AddrType == "" { // address type unknown. Fall back to get address by request
+		ip, err := getUserIP(r)
 		if ip == "" {
 			ip, _, err = net.SplitHostPort(r.RemoteAddr)
 		}
 
 		if err != nil {
-			response.Success = false
-			response.Message = fmt.Sprintf("%q is neither a valid IPv4 nor IPv6 address", r.RemoteAddr)
-			log.Println(fmt.Sprintf("Invalid address: %q", r.RemoteAddr))
-			return response
+			ip = "" // will fail later
 		}
-
-		// @todo refactor this code to remove duplication
-		if ipparser.ValidIP4(ip) {
-			response.AddrType = "A"
-		} else if ipparser.ValidIP6(ip) {
-			response.AddrType = "AAAA"
-		} else {
-			response.Success = false
-			response.Message = fmt.Sprintf("%s is neither a valid IPv4 nor IPv6 address", response.Address)
-			log.Println(fmt.Sprintf("Invalid address: %s", response.Address))
-			return response
-		}
-
 		response.Address = ip
+		response.AddrType = addrType(response.Address)
+	}
+
+	if response.AddrType == "" {
+		response.Success = false
+		response.Message = fmt.Sprintf("%s is neither a valid IPv4 nor IPv6 address", response.Address)
+		log.Println(fmt.Sprintf("Invalid address: %s", response.Address))
+		return response
 	}
 
 	response.Success = true
@@ -122,27 +117,27 @@ func inRange(r ipRange, ipAddress net.IP) bool {
 }
 
 var privateRanges = []ipRange{
-	ipRange{
+	{
 		start: net.ParseIP("10.0.0.0"),
 		end:   net.ParseIP("10.255.255.255"),
 	},
-	ipRange{
+	{
 		start: net.ParseIP("100.64.0.0"),
 		end:   net.ParseIP("100.127.255.255"),
 	},
-	ipRange{
+	{
 		start: net.ParseIP("172.16.0.0"),
 		end:   net.ParseIP("172.31.255.255"),
 	},
-	ipRange{
+	{
 		start: net.ParseIP("192.0.0.0"),
 		end:   net.ParseIP("192.0.0.255"),
 	},
-	ipRange{
+	{
 		start: net.ParseIP("192.168.0.0"),
 		end:   net.ParseIP("192.168.255.255"),
 	},
-	ipRange{
+	{
 		start: net.ParseIP("198.18.0.0"),
 		end:   net.ParseIP("198.19.255.255"),
 	},
