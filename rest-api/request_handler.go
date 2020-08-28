@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"dyndns/ipparser"
+	"github.com/dprandzioch/docker-ddns/rest-api/ipparser"
 )
 
 type RequestDataExtractor struct {

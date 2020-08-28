@@ -1,7 +1,7 @@
 package main
 
 import (
-	"dyndns/ipparser"
+	"github.com/dprandzioch/docker-ddns/rest-api/ipparser"
 	"testing"
 )
 
