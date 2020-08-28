@@ -12,12 +12,6 @@ import (
 	"github.com/dprandzioch/docker-ddns/rest-api/ipparser"
 )
 
-type RequestDataExtractor struct {
-	Address func(request *http.Request) string
-	Secret  func(request *http.Request) string
-	Domain  func(request *http.Request) string
-}
-
 type WebserviceResponse struct {
 	Success  bool
 	Message  string
@@ -27,7 +21,7 @@ type WebserviceResponse struct {
 	AddrType string
 }
 
-func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extractors RequestDataExtractor) WebserviceResponse {
+func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extractors requestDataExtractor) WebserviceResponse {
 	response := WebserviceResponse{}
 
 	sharedSecret := extractors.Secret(r)
@@ -168,4 +162,3 @@ func isPrivateSubnet(ipAddress net.IP) bool {
 	}
 	return false
 }
-

@@ -9,18 +9,28 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type key int
+
+const (
+	responseKey  key = iota
+	extractorKey key = iota
+)
+
 var appConfig = &ConfigFlags{}
 
 func main() {
+	defaultExtractor := defaultRequestDataExtractor{}
+	dynExtractor := dynRequestDataExtractor{}
+
 	appConfig.LoadConfig()
 
 	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/update", Update).Methods("GET")
+	router.Handle("/update", requestRequestDataMiddleware(http.HandlerFunc(update), defaultExtractor)).Methods("GET")
 
 	/* DynDNS compatible handlers. Most routers will invoke /nic/update */
-	router.HandleFunc("/nic/update", DynUpdate).Methods("GET")
-	router.HandleFunc("/v2/update", DynUpdate).Methods("GET")
-	router.HandleFunc("/v3/update", DynUpdate).Methods("GET")
+	router.Handle("/nic/update", requestRequestDataMiddleware(http.HandlerFunc(dynUpdate), dynExtractor)).Methods("GET")
+	router.Handle("/v2/update", requestRequestDataMiddleware(http.HandlerFunc(dynUpdate), dynExtractor)).Methods("GET")
+	router.Handle("/v3/update", requestRequestDataMiddleware(http.HandlerFunc(dynUpdate), dynExtractor)).Methods("GET")
 
 	listenTo := fmt.Sprintf("%s:%d", "", appConfig.Port)
 
@@ -28,20 +38,8 @@ func main() {
 	log.Fatal(http.ListenAndServe(listenTo, router))
 }
 
-func DynUpdate(w http.ResponseWriter, r *http.Request) {
-	extractor := RequestDataExtractor{
-		Address: func(r *http.Request) string { return r.URL.Query().Get("myip") },
-		Secret: func(r *http.Request) string {
-			_, sharedSecret, ok := r.BasicAuth()
-			if !ok || sharedSecret == "" {
-				sharedSecret = r.URL.Query().Get("password")
-			}
-
-			return sharedSecret
-		},
-		Domain: func(r *http.Request) string { return r.URL.Query().Get("hostname") },
-	}
-	response := BuildWebserviceResponseFromRequest(r, &appConfig.Config, extractor)
+func dynUpdate(w http.ResponseWriter, r *http.Request) {
+	response := r.Context().Value(responseKey).(WebserviceResponse)
 
 	if response.Success == false {
 		if response.Message == "Domain not set" {
@@ -52,49 +50,45 @@ func DynUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, domain := range response.Domains {
-		recordUpdate := RecordUpdateRequest{
-			domain:   domain,
-			ipaddr:   response.Address,
-			addrType: response.AddrType,
-			ddnskey:  "",
-		}
-		result := recordUpdate.updateRecord()
+	success := updateDomains(r, &response, func() {
+		w.Write([]byte("dnserr\n"))
+	})
 
-		if result != "" {
-			response.Success = false
-			response.Message = result
-
-			w.Write([]byte("dnserr\n"))
-			return
-		}
+	if !success {
+		return
 	}
-
-	response.Success = true
-	response.Message = fmt.Sprintf("Updated %s record for %s to IP address %s", response.AddrType, response.Domain, response.Address)
 
 	w.Write([]byte(fmt.Sprintf("good %s\n", response.Address)))
 }
 
-func Update(w http.ResponseWriter, r *http.Request) {
-	extractor := RequestDataExtractor{
-		Address: func(r *http.Request) string { return r.URL.Query().Get("addr") },
-		Secret:  func(r *http.Request) string { return r.URL.Query().Get("secret") },
-		Domain:  func(r *http.Request) string { return r.URL.Query().Get("domain") },
-	}
-	response := BuildWebserviceResponseFromRequest(r, &appConfig.Config, extractor)
+func update(w http.ResponseWriter, r *http.Request) {
+	response := r.Context().Value(responseKey).(WebserviceResponse)
 
 	if response.Success == false {
 		json.NewEncoder(w).Encode(response)
 		return
 	}
 
+	success := updateDomains(r, &response, func() {
+		json.NewEncoder(w).Encode(response)
+	})
+
+	if !success {
+		return
+	}
+
+	json.NewEncoder(w).Encode(response)
+}
+
+func updateDomains(r *http.Request, response *WebserviceResponse, onError func()) bool {
+	extractor := r.Context().Value(extractorKey).(requestDataExtractor)
+
 	for _, domain := range response.Domains {
 		recordUpdate := RecordUpdateRequest{
 			domain:   domain,
 			ipaddr:   response.Address,
 			addrType: response.AddrType,
-			ddnskey:  "",
+			ddnskey:  extractor.DdnsKey(r),
 		}
 		result := recordUpdate.updateRecord()
 
@@ -102,15 +96,15 @@ func Update(w http.ResponseWriter, r *http.Request) {
 			response.Success = false
 			response.Message = result
 
-			json.NewEncoder(w).Encode(response)
-			return
+			onError()
+			return false
 		}
 	}
 
 	response.Success = true
 	response.Message = fmt.Sprintf("Updated %s record for %s to IP address %s", response.AddrType, response.Domain, response.Address)
 
-	json.NewEncoder(w).Encode(response)
+	return true
 }
 
 func (r RecordUpdateRequest) updateRecord() string {

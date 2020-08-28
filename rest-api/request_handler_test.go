@@ -6,24 +6,8 @@ import (
 	"testing"
 )
 
-var defaultExtractor = RequestDataExtractor{
-	Address: func(r *http.Request) string { return r.URL.Query().Get("addr") },
-	Secret:  func(r *http.Request) string { return r.URL.Query().Get("secret") },
-	Domain:  func(r *http.Request) string { return r.URL.Query().Get("domain") },
-}
-
-var dynExtractor = RequestDataExtractor{
-	Address: func(r *http.Request) string { return r.URL.Query().Get("myip") },
-	Secret: func(r *http.Request) string {
-		_, sharedSecret, ok := r.BasicAuth()
-		if !ok || sharedSecret == "" {
-			sharedSecret = r.URL.Query().Get("password")
-		}
-
-		return sharedSecret
-	},
-	Domain: func(r *http.Request) string { return r.URL.Query().Get("hostname") },
-}
+var defaultExtractor = defaultRequestDataExtractor{}
+var dynExtractor = dynRequestDataExtractor{}
 
 func TestBuildWebserviceResponseFromRequestToReturnValidObject(t *testing.T) {
 	var appConfig = &Config{}
