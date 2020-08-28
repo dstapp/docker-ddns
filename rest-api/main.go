@@ -1,15 +1,10 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
-	"os/exec"
 
 	"github.com/gorilla/mux"
 )
@@ -58,7 +53,13 @@ func DynUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, domain := range response.Domains {
-		result := UpdateRecord(domain, response.Address, response.AddrType)
+		recordUpdate := RecordUpdateRequest{
+			domain:   domain,
+			ipaddr:   response.Address,
+			addrType: response.AddrType,
+			ddnskey:  "",
+		}
+		result := recordUpdate.updateRecord()
 
 		if result != "" {
 			response.Success = false
@@ -89,7 +90,13 @@ func Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, domain := range response.Domains {
-		result := UpdateRecord(domain, response.Address, response.AddrType)
+		recordUpdate := RecordUpdateRequest{
+			domain:   domain,
+			ipaddr:   response.Address,
+			addrType: response.AddrType,
+			ddnskey:  "",
+		}
+		result := recordUpdate.updateRecord()
 
 		if result != "" {
 			response.Success = false
@@ -106,35 +113,17 @@ func Update(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func UpdateRecord(domain string, ipaddr string, addrType string) string {
-	log.Println(fmt.Sprintf("%s record update request: %s -> %s", addrType, domain, ipaddr))
+func (r RecordUpdateRequest) updateRecord() string {
+	var nsupdate NSUpdateInterface = NewNSUpdate()
+	nsupdate.UpdateRecord(r)
+	result := nsupdate.Close()
 
-	f, err := ioutil.TempFile(os.TempDir(), "dyndns")
-	if err != nil {
-		return err.Error()
+	status := "succeeded"
+	if result != "" {
+		status = "failed, error: " + result
 	}
 
-	defer os.Remove(f.Name())
-	w := bufio.NewWriter(f)
+	log.Println(fmt.Sprintf("%s record update request: %s -> %s %s", r.addrType, r.domain, r.ipaddr, status))
 
-	w.WriteString(fmt.Sprintf("server %s\n", appConfig.Server))
-	w.WriteString(fmt.Sprintf("zone %s\n", appConfig.Zone))
-	w.WriteString(fmt.Sprintf("update delete %s.%s %s\n", domain, appConfig.Domain, addrType))
-	w.WriteString(fmt.Sprintf("update add %s.%s %v %s %s\n", domain, appConfig.Domain, appConfig.RecordTTL, addrType, ipaddr))
-	w.WriteString("send\n")
-
-	w.Flush()
-	f.Close()
-
-	cmd := exec.Command(appConfig.NsupdateBinary, f.Name())
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-	err = cmd.Run()
-	if err != nil {
-		return err.Error() + ": " + stderr.String()
-	}
-
-	return out.String()
+	return result
 }
