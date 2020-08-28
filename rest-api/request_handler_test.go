@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"net/http"
 	"testing"
 )
@@ -199,7 +200,7 @@ func TestBuildWebserviceResponseFromRequestToReturnValidObjectWithDynExtractor(t
 	appConfig.SharedSecret = "changeme"
 
 	req, _ := http.NewRequest("GET", "/nic/update?hostname=foo&myip=1.2.3.4", nil)
-	req.Header.Add("Authorization", "Basic dXNlcm5hbWU6Y2hhbmdlbWU=") // This is the base-64 encoded value of "username:changeme"
+	req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte("username:changeme")))
 
 	result := BuildWebserviceResponseFromRequest(req, appConfig, dynExtractor)
 
