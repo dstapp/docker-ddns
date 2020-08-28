@@ -14,10 +14,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var appConfig = &Config{}
+var appConfig = &ConfigFlags{}
 
 func main() {
-	appConfig.LoadConfig("/etc/dyndns.json")
+	appConfig.LoadConfig()
 
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/update", Update).Methods("GET")
@@ -27,8 +27,10 @@ func main() {
 	router.HandleFunc("/v2/update", DynUpdate).Methods("GET")
 	router.HandleFunc("/v3/update", DynUpdate).Methods("GET")
 
-	log.Println(fmt.Sprintf("Serving dyndns REST services on 0.0.0.0:8080..."))
-	log.Fatal(http.ListenAndServe(":8080", router))
+	listenTo := fmt.Sprintf("%s:%d", "", appConfig.Port)
+
+	log.Println(fmt.Sprintf("Serving dyndns REST services on " + listenTo + "..."))
+	log.Fatal(http.ListenAndServe(listenTo, router))
 }
 
 func DynUpdate(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +46,7 @@ func DynUpdate(w http.ResponseWriter, r *http.Request) {
 		},
 		Domain: func(r *http.Request) string { return r.URL.Query().Get("hostname") },
 	}
-	response := BuildWebserviceResponseFromRequest(r, appConfig, extractor)
+	response := BuildWebserviceResponseFromRequest(r, &appConfig.Config, extractor)
 
 	if response.Success == false {
 		if response.Message == "Domain not set" {
@@ -79,7 +81,7 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		Secret:  func(r *http.Request) string { return r.URL.Query().Get("secret") },
 		Domain:  func(r *http.Request) string { return r.URL.Query().Get("domain") },
 	}
-	response := BuildWebserviceResponseFromRequest(r, appConfig, extractor)
+	response := BuildWebserviceResponseFromRequest(r, &appConfig.Config, extractor)
 
 	if response.Success == false {
 		json.NewEncoder(w).Encode(response)
