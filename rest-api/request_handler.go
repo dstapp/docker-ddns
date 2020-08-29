@@ -13,21 +13,27 @@ import (
 )
 
 type WebserviceResponse struct {
-	Success  bool
-	Message  string
-	Domain   string
-	Domains  []string
+	Success   bool
+	Message   string
+	Domain    string
+	Domains   []string
+	Address   string
+	AddrType  string
+	Addresses []Address
+}
+
+type Address struct {
 	Address  string
 	AddrType string
 }
 
-func addrType(address string) string {
+func ParseAddress(address string) (Address, error) {
 	if ipparser.ValidIP4(address) {
-		return "A"
+		return Address{Address: address, AddrType: "A"}, nil
 	} else if ipparser.ValidIP6(address) {
-		return "AAAA"
+		return Address{Address: address, AddrType: "AAAA"}, nil
 	}
-	return ""
+	return Address{}, fmt.Errorf("Invalid ip address: %s", address)
 }
 
 func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extractors requestDataExtractor) WebserviceResponse {
@@ -35,7 +41,12 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extr
 
 	sharedSecret := extractors.Secret(r)
 	response.Domains = strings.Split(extractors.Domain(r), ",")
-	response.Address = extractors.Address(r)
+	for _, address := range strings.Split(extractors.Address(r), ",") {
+		var parsedAddress, error = ParseAddress(address)
+		if error == nil {
+			response.Addresses = append(response.Addresses, parsedAddress)
+		}
+	}
 
 	if sharedSecret != appConfig.SharedSecret {
 		log.Println(fmt.Sprintf("Invalid shared secret: %s", sharedSecret))
@@ -53,29 +64,31 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extr
 		}
 	}
 
-	// kept in the response for compatibility reasons
-	response.Domain = strings.Join(response.Domains, ",")
-
-	response.AddrType = addrType(response.Address)
-	if response.AddrType == "" { // address type unknown. Fall back to get address by request
+	if len(response.Addresses) == 0 {
 		ip, err := getUserIP(r)
 		if ip == "" {
 			ip, _, err = net.SplitHostPort(r.RemoteAddr)
 		}
 
-		if err != nil {
-			ip = "" // will fail later
+		if err == nil {
+			parsedAddress, err := ParseAddress(ip)
+			if err == nil {
+				response.Addresses = append(response.Addresses, parsedAddress)
+			}
 		}
-		response.Address = ip
-		response.AddrType = addrType(response.Address)
 	}
 
-	if response.AddrType == "" {
+	if len(response.Addresses) == 0 {
 		response.Success = false
-		response.Message = fmt.Sprintf("%s is neither a valid IPv4 nor IPv6 address", response.Address)
-		log.Println(fmt.Sprintf("Invalid address: %s", response.Address))
+		response.Message = fmt.Sprintf("%v is neither a valid IPv4 nor IPv6 address", response.Addresses)
+		log.Println(fmt.Sprintf("Invalid address: %v", response.Addresses))
 		return response
 	}
+
+	// kept in the response for compatibility reasons
+	response.Domain = strings.Join(response.Domains, ",")
+	response.Address = response.Addresses[0].Address
+	response.AddrType = response.Addresses[0].AddrType
 
 	response.Success = true
 

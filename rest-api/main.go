@@ -83,26 +83,31 @@ func update(w http.ResponseWriter, r *http.Request) {
 func updateDomains(r *http.Request, response *WebserviceResponse, onError func()) bool {
 	extractor := r.Context().Value(extractorKey).(requestDataExtractor)
 
-	for _, domain := range response.Domains {
-		recordUpdate := RecordUpdateRequest{
-			domain:   domain,
-			ipaddr:   response.Address,
-			addrType: response.AddrType,
-			ddnskey:  extractor.DdnsKey(r),
-		}
-		result := recordUpdate.updateRecord()
+	for _, address := range response.Addresses {
+		for _, domain := range response.Domains {
+			recordUpdate := RecordUpdateRequest{
+				domain:   domain,
+				ipaddr:   address.Address,
+				addrType: address.AddrType,
+				ddnskey:  extractor.DdnsKey(r),
+			}
+			result := recordUpdate.updateRecord()
 
-		if result != "" {
-			response.Success = false
-			response.Message = result
+			if result != "" {
+				response.Success = false
+				response.Message = result
 
-			onError()
-			return false
+				onError()
+				return false
+			}
+
+			response.Success = true
+			if len(response.Message) == 0 {
+				response.Message += "; "
+			}
+			response.Message += fmt.Sprintf("Updated %s record for %s to IP address %s", address.AddrType, response.Domain, address.Address)
 		}
 	}
-
-	response.Success = true
-	response.Message = fmt.Sprintf("Updated %s record for %s to IP address %s", response.AddrType, response.Domain, response.Address)
 
 	return true
 }
