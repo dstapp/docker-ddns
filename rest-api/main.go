@@ -102,10 +102,10 @@ func updateDomains(r *http.Request, response *WebserviceResponse, onError func()
 			}
 
 			response.Success = true
-			if len(response.Message) == 0 {
+			if len(response.Message) != 0 {
 				response.Message += "; "
 			}
-			response.Message += fmt.Sprintf("Updated %s record for %s to IP address %s", address.AddrType, response.Domain, address.Address)
+			response.Message += fmt.Sprintf("Updated %s record for %s to IP address %s", address.AddrType, domain, address.Address)
 		}
 	}
 
