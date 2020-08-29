@@ -112,7 +112,9 @@ func (nsupdate *NSUpdate) UpdateRecord(r RecordUpdateRequest) {
 	}
 
 	nsupdate.write("server %s\n", appConfig.Server)
-	nsupdate.write("zone %s\n", appConfig.Zone)
+    if appConfig.Zone != "" {
+        nsupdate.write("zone %s\n", appConfig.Zone)
+    }
 	nsupdate.write("update delete %s %s\n", fqdn, r.addrType)
 	nsupdate.write("update add %s %v %s %s\n", fqdn, appConfig.RecordTTL, r.addrType, escape(r.ipaddr))
 	nsupdate.write("send\n")
