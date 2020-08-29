@@ -80,8 +80,8 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extr
 
 	if len(response.Addresses) == 0 {
 		response.Success = false
-		response.Message = fmt.Sprintf("%v is neither a valid IPv4 nor IPv6 address", response.Addresses)
-		log.Println(fmt.Sprintf("Invalid address: %v", response.Addresses))
+		response.Message = fmt.Sprintf("%v is neither a valid IPv4 nor IPv6 address", extractors.Address(r))
+		log.Println(fmt.Sprintf("Invalid address: %v", extractors.Address(r)))
 		return response
 	}
 
