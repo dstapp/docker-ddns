@@ -19,10 +19,13 @@ type NSUpdateInterface interface {
 
 // RecordUpdateRequest data representing a update request
 type RecordUpdateRequest struct {
-	domain   string
-	ipaddr   string
-	addrType string
-	ddnskey  string
+	domain      string
+	ipAddr      string
+	addrType    string
+	ddnsKeyName string
+	secret      string
+	zone        string
+	fqdn        string
 }
 
 // NSUpdate holds resources need for an open nsupdate program
@@ -106,9 +109,9 @@ func (nsupdate *NSUpdate) UpdateRecord(r RecordUpdateRequest) {
 		fqdn = escape(r.domain) + "." + appConfig.Zone
 	}
 
-	if r.ddnskey != "" {
-		fqdnN := strings.TrimLeft(fqdn, ".")
-		nsupdate.write("key hmac-sha256:ddns-key.%s %s\n", fqdnN, escape(r.ddnskey))
+	if r.secret != "" {
+		fqdnN := strings.TrimLeft(appConfig.Zone, ".")
+		nsupdate.write("key hmac-sha256:ddns-key.%s %s\n", fqdnN, escape(r.secret))
 	}
 
 	nsupdate.write("server %s\n", appConfig.Server)
@@ -116,6 +119,6 @@ func (nsupdate *NSUpdate) UpdateRecord(r RecordUpdateRequest) {
         nsupdate.write("zone %s\n", appConfig.Zone)
     }
 	nsupdate.write("update delete %s %s\n", fqdn, r.addrType)
-	nsupdate.write("update add %s %v %s %s\n", fqdn, appConfig.RecordTTL, r.addrType, escape(r.ipaddr))
+	nsupdate.write("update add %s %v %s %s\n", fqdn, appConfig.RecordTTL, r.addrType, escape(r.ipAddr))
 	nsupdate.write("send\n")
 }

@@ -9,7 +9,7 @@ FROM debian:buster-slim
 MAINTAINER David Prandzioch <hello+ddns@davd.eu>
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
-	apt-get install -q -y bind9 dnsutils && \
+	apt-get install -q -y bind9 dnsutils openssl && \
 	apt-get clean
 
 RUN chmod 770 /var/cache/bind

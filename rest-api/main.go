@@ -86,10 +86,10 @@ func updateDomains(r *http.Request, response *WebserviceResponse, onError func()
 	for _, address := range response.Addresses {
 		for _, domain := range response.Domains {
 			recordUpdate := RecordUpdateRequest{
-				domain:   domain,
-				ipaddr:   address.Address,
-				addrType: address.AddrType,
-				ddnskey:  extractor.DdnsKey(r),
+				domain:      domain,
+				ipAddr:      address.Address,
+				addrType:    address.AddrType,
+				secret:      extractor.Secret(r),
 			}
 			result := recordUpdate.updateRecord()
 
@@ -122,7 +122,7 @@ func (r RecordUpdateRequest) updateRecord() string {
 		status = "failed, error: " + result
 	}
 
-	log.Println(fmt.Sprintf("%s record update request: %s -> %s %s", r.addrType, r.domain, r.ipaddr, status))
+	log.Println(fmt.Sprintf("%s record update request: %s -> %s %s", r.addrType, r.domain, r.ipAddr, status))
 
 	return result
 }

@@ -39,7 +39,6 @@ func ParseAddress(address string) (Address, error) {
 func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extractors requestDataExtractor) WebserviceResponse {
 	response := WebserviceResponse{}
 
-	sharedSecret := extractors.Secret(r)
 	response.Domains = strings.Split(extractors.Domain(r), ",")
 	for _, address := range strings.Split(extractors.Address(r), ",") {
 		var parsedAddress, error = ParseAddress(address)
@@ -48,8 +47,8 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extr
 		}
 	}
 
-	if sharedSecret != appConfig.SharedSecret {
-		log.Println(fmt.Sprintf("Invalid shared secret: %s", sharedSecret))
+	if extractors.Secret(r) == "" { // futher checking is done by bind server as configured
+		log.Println(fmt.Sprintf("Invalid shared secret"))
 		response.Success = false
 		response.Message = "Invalid Credentials"
 		return response

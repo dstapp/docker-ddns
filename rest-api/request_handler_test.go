@@ -11,7 +11,6 @@ var dynExtractor = dynRequestDataExtractor{}
 
 func TestBuildWebserviceResponseFromRequestToReturnValidObject(t *testing.T) {
 	var appConfig = &Config{}
-	appConfig.SharedSecret = "changeme"
 
 	req, _ := http.NewRequest("GET", "/update?secret=changeme&domain=foo&addr=1.2.3.4", nil)
 	result := BuildWebserviceResponseFromRequest(req, appConfig, defaultExtractor)
@@ -35,7 +34,6 @@ func TestBuildWebserviceResponseFromRequestToReturnValidObject(t *testing.T) {
 
 func TestBuildWebserviceResponseFromRequestWithXRealIPHeaderToReturnValidObject(t *testing.T) {
 	var appConfig = &Config{}
-	appConfig.SharedSecret = "changeme"
 
 	req, _ := http.NewRequest("GET", "/update?secret=changeme&domain=foo", nil)
 	req.Header.Add("X-Real-Ip", "1.2.3.4")
@@ -60,7 +58,6 @@ func TestBuildWebserviceResponseFromRequestWithXRealIPHeaderToReturnValidObject(
 
 func TestBuildWebserviceResponseFromRequestWithXForwardedForHeaderToReturnValidObject(t *testing.T) {
 	var appConfig = &Config{}
-	appConfig.SharedSecret = "changeme"
 
 	req, _ := http.NewRequest("GET", "/update?secret=changeme&domain=foo", nil)
 	req.Header.Add("X-Forwarded-For", "1.2.3.4")
@@ -85,7 +82,6 @@ func TestBuildWebserviceResponseFromRequestWithXForwardedForHeaderToReturnValidO
 
 func TestBuildWebserviceResponseFromRequestToReturnInvalidObjectWhenNoSecretIsGiven(t *testing.T) {
 	var appConfig = &Config{}
-	appConfig.SharedSecret = "changeme"
 
 	req, _ := http.NewRequest("GET", "/update", nil)
 	result := BuildWebserviceResponseFromRequest(req, appConfig, defaultExtractor)
@@ -97,7 +93,6 @@ func TestBuildWebserviceResponseFromRequestToReturnInvalidObjectWhenNoSecretIsGi
 
 func TestBuildWebserviceResponseFromRequestToReturnInvalidObjectWhenInvalidSecretIsGiven(t *testing.T) {
 	var appConfig = &Config{}
-	appConfig.SharedSecret = "changeme"
 
 	req, _ := http.NewRequest("GET", "/update?secret=foo", nil)
 	result := BuildWebserviceResponseFromRequest(req, appConfig, defaultExtractor)
@@ -109,7 +104,6 @@ func TestBuildWebserviceResponseFromRequestToReturnInvalidObjectWhenInvalidSecre
 
 func TestBuildWebserviceResponseFromRequestToReturnInvalidObjectWhenNoDomainIsGiven(t *testing.T) {
 	var appConfig = &Config{}
-	appConfig.SharedSecret = "changeme"
 
 	req, _ := http.NewRequest("GET", "/update?secret=changeme", nil)
 	result := BuildWebserviceResponseFromRequest(req, appConfig, defaultExtractor)
@@ -121,7 +115,6 @@ func TestBuildWebserviceResponseFromRequestToReturnInvalidObjectWhenNoDomainIsGi
 
 func TestBuildWebserviceResponseFromRequestWithMultipleDomains(t *testing.T) {
 	var appConfig = &Config{}
-	appConfig.SharedSecret = "changeme"
 
 	req, _ := http.NewRequest("GET", "/update?secret=changeme&domain=foo,bar&addr=1.2.3.4", nil)
 	result := BuildWebserviceResponseFromRequest(req, appConfig, defaultExtractor)
@@ -145,7 +138,6 @@ func TestBuildWebserviceResponseFromRequestWithMultipleDomains(t *testing.T) {
 
 func TestBuildWebserviceResponseFromRequestWithMalformedMultipleDomains(t *testing.T) {
 	var appConfig = &Config{}
-	appConfig.SharedSecret = "changeme"
 
 	req, _ := http.NewRequest("GET", "/update?secret=changeme&domain=foo,&addr=1.2.3.4", nil)
 	result := BuildWebserviceResponseFromRequest(req, appConfig, defaultExtractor)
@@ -157,7 +149,6 @@ func TestBuildWebserviceResponseFromRequestWithMalformedMultipleDomains(t *testi
 
 func TestBuildWebserviceResponseFromRequestToReturnInvalidObjectWhenNoAddressIsGiven(t *testing.T) {
 	var appConfig = &Config{}
-	appConfig.SharedSecret = "changeme"
 
 	req, _ := http.NewRequest("POST", "/update?secret=changeme&domain=foo", nil)
 	result := BuildWebserviceResponseFromRequest(req, appConfig, defaultExtractor)
@@ -169,7 +160,6 @@ func TestBuildWebserviceResponseFromRequestToReturnInvalidObjectWhenNoAddressIsG
 
 func TestBuildWebserviceResponseFromRequestToReturnInvalidObjectWhenInvalidAddressIsGiven(t *testing.T) {
 	var appConfig = &Config{}
-	appConfig.SharedSecret = "changeme"
 
 	req, _ := http.NewRequest("GET", "/update?secret=changeme&domain=foo&addr=1.41:2", nil)
 	result := BuildWebserviceResponseFromRequest(req, appConfig, defaultExtractor)
@@ -181,7 +171,6 @@ func TestBuildWebserviceResponseFromRequestToReturnInvalidObjectWhenInvalidAddre
 
 func TestBuildWebserviceResponseFromRequestToReturnValidObjectWithDynExtractor(t *testing.T) {
 	var appConfig = &Config{}
-	appConfig.SharedSecret = "changeme"
 
 	req, _ := http.NewRequest("GET", "/nic/update?hostname=foo&myip=1.2.3.4", nil)
 	req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte("username:changeme")))
@@ -207,7 +196,6 @@ func TestBuildWebserviceResponseFromRequestToReturnValidObjectWithDynExtractor(t
 
 func TestBuildWebserviceResponseFromRequestToReturnInvalidObjectWhenNoSecretIsGivenWithDynExtractor(t *testing.T) {
 	var appConfig = &Config{}
-	appConfig.SharedSecret = "changeme"
 
 	req, _ := http.NewRequest("GET", "/nic/update", nil)
 	result := BuildWebserviceResponseFromRequest(req, appConfig, dynExtractor)

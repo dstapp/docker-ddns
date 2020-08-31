@@ -7,10 +7,8 @@ import (
 )
 
 type Config struct {
-	SharedSecret   string
 	Server         string
 	Zone           string
-	Domain         string
 	NsupdateBinary string
 	RecordTTL      int
 	Port           int
@@ -38,10 +36,8 @@ func (conf *Config) loadConfigFromFile(path string) {
 func (flagsConf *ConfigFlags) setupFlags() {
 	flag.BoolVar(&flagsConf.DoNotLoadConfig, "noConfig", false, "Do not load the config file")
 	flag.StringVar(&flagsConf.ConfigFile, "c", "/etc/dyndns.json", "The configuration file")
-	flag.StringVar(&flagsConf.SharedSecret, "sharedSecret", "", "The shared secret (default a generated random string)")
 	flag.StringVar(&flagsConf.Server, "server", "localhost", "The address of the bind server")
 	flag.StringVar(&flagsConf.Zone, "zone", "localhost", "Zone")
-	flag.StringVar(&flagsConf.Domain, "domain", "localhost", "Domain")
 	flag.StringVar(&flagsConf.NsupdateBinary, "nsupdateBinary", "nsupdate", "Path to nsupdate program")
 	flag.IntVar(&flagsConf.RecordTTL, "recordTTL", 300, "RecordTTL")
 	flag.IntVar(&flagsConf.Port, "p", 8080, "Port")
@@ -57,10 +53,5 @@ func (flagsConf *ConfigFlags) LoadConfig() {
 	if !flagsConf.DoNotLoadConfig {
 		flagsConf.loadConfigFromFile(flagsConf.ConfigFile)
 		flag.Parse() // Parse a second time to overwrite settings from the loaded file
-	}
-
-	// Fix unsafe config values
-	if flagsConf.SharedSecret == "" {
-		flagsConf.SharedSecret = randomString()
 	}
 }
