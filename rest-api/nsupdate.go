@@ -104,21 +104,14 @@ func escape(s string) string {
 
 // UpdateRecord sends the record update request to the nsupdate program
 func (nsupdate *NSUpdate) UpdateRecord(r RecordUpdateRequest) {
-	fqdn := escape(r.domain)
-	if appConfig.Zone != "" {
-		fqdn = escape(r.domain) + "." + appConfig.Zone
-	}
-
-	if r.secret != "" {
-		fqdnN := strings.TrimLeft(appConfig.Zone, ".")
-		nsupdate.write("key hmac-sha256:ddns-key.%s %s\n", fqdnN, escape(r.secret))
-	}
-
 	nsupdate.write("server %s\n", appConfig.Server)
-    if appConfig.Zone != "" {
-        nsupdate.write("zone %s\n", appConfig.Zone)
-    }
-	nsupdate.write("update delete %s %s\n", fqdn, r.addrType)
-	nsupdate.write("update add %s %v %s %s\n", fqdn, appConfig.RecordTTL, r.addrType, escape(r.ipAddr))
+	if r.zone != "" {
+		nsupdate.write("zone %s\n", r.zone+".")
+	}
+	if r.ddnsKeyName != "" {
+		nsupdate.write("key hmac-sha256:ddns-key.%s %s\n", escape(r.ddnsKeyName), escape(r.secret))
+	}
+	nsupdate.write("update delete %s %s\n", r.fqdn, r.addrType)
+	nsupdate.write("update add %s %v %s %s\n", r.fqdn, appConfig.RecordTTL, r.addrType, escape(r.ipAddr))
 	nsupdate.write("send\n")
 }

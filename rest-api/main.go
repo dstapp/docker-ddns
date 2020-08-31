@@ -19,8 +19,8 @@ const (
 var appConfig = &ConfigFlags{}
 
 func main() {
-	defaultExtractor := defaultRequestDataExtractor{}
-	dynExtractor := dynRequestDataExtractor{}
+	defaultExtractor := defaultRequestDataExtractor{appConfig: &appConfig.Config}
+	dynExtractor := dynRequestDataExtractor{defaultRequestDataExtractor{appConfig: &appConfig.Config}}
 
 	appConfig.LoadConfig()
 
@@ -90,6 +90,9 @@ func updateDomains(r *http.Request, response *WebserviceResponse, onError func()
 				ipAddr:      address.Address,
 				addrType:    address.AddrType,
 				secret:      extractor.Secret(r),
+				ddnsKeyName: extractor.DdnsKeyName(r, domain),
+				zone:        extractor.Zone(r, domain),
+				fqdn:        extractor.Fqdn(r, domain),
 			}
 			result := recordUpdate.updateRecord()
 

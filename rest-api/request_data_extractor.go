@@ -3,16 +3,21 @@ package main
 import (
 	"context"
 	"net/http"
+	"strings"
 )
 
 type requestDataExtractor interface {
 	Address(r *http.Request) string
 	Secret(r *http.Request) string
 	Domain(r *http.Request) string
-	DdnsKey(r *http.Request) string
+	DdnsKeyName(r *http.Request, domain string) string
+	Zone(r *http.Request, domain string) string
+	Fqdn(r *http.Request, domain string) string
 }
 
-type defaultRequestDataExtractor struct{}
+type defaultRequestDataExtractor struct {
+	appConfig *Config
+}
 
 func (e defaultRequestDataExtractor) Address(r *http.Request) string {
 	return r.URL.Query().Get("addr")
@@ -23,8 +28,31 @@ func (e defaultRequestDataExtractor) Secret(r *http.Request) string {
 func (e defaultRequestDataExtractor) Domain(r *http.Request) string {
 	return r.URL.Query().Get("domain")
 }
-func (e defaultRequestDataExtractor) DdnsKey(r *http.Request) string {
-	return r.URL.Query().Get("ddnskey")
+func (e defaultRequestDataExtractor) DdnsKeyName(r *http.Request, domain string) string {
+	ddnsKeyName := r.URL.Query().Get("ddnskeyname")
+	if ddnsKeyName != "" {
+		return ddnsKeyName
+	}
+	ddnsKeyName = e.Zone(r, domain)
+	if ddnsKeyName != "" {
+		return ddnsKeyName
+	}
+	ddnsKeyName = e.Fqdn(r, domain)
+	return ddnsKeyName
+}
+func (e defaultRequestDataExtractor) Zone(r *http.Request, domain string) string {
+	zone := r.URL.Query().Get("zone")
+	if zone != "" {
+		return zone
+	}
+	zone = strings.TrimRight(e.appConfig.Zone, ".")
+	if domain[len(domain)-1:] == "." {
+		zone = ""
+	}
+	return zone
+}
+func (e defaultRequestDataExtractor) Fqdn(r *http.Request, domain string) string {
+	return strings.TrimRight(escape(domain)+"."+e.Zone(r, domain), ".")
 }
 
 type dynRequestDataExtractor struct{ defaultRequestDataExtractor }

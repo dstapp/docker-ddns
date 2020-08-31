@@ -37,7 +37,7 @@ func (flagsConf *ConfigFlags) setupFlags() {
 	flag.BoolVar(&flagsConf.DoNotLoadConfig, "noConfig", false, "Do not load the config file")
 	flag.StringVar(&flagsConf.ConfigFile, "c", "/etc/dyndns.json", "The configuration file")
 	flag.StringVar(&flagsConf.Server, "server", "localhost", "The address of the bind server")
-	flag.StringVar(&flagsConf.Zone, "zone", "localhost", "Zone")
+	flag.StringVar(&flagsConf.Zone, "zone", "", "Configuring a default zone will allow to send request with the hostname only as the domain")
 	flag.StringVar(&flagsConf.NsupdateBinary, "nsupdateBinary", "nsupdate", "Path to nsupdate program")
 	flag.IntVar(&flagsConf.RecordTTL, "recordTTL", 300, "RecordTTL")
 	flag.IntVar(&flagsConf.Port, "p", 8080, "Port")
