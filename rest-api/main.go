@@ -27,13 +27,25 @@ func main() {
 	router.HandleFunc("/v2/update", DynUpdate).Methods("GET")
 	router.HandleFunc("/v3/update", DynUpdate).Methods("GET")
 
-	log.Println(fmt.Sprintf("Serving dyndns REST services on 0.0.0.0:8080..."))
-	log.Fatal(http.ListenAndServe(":8080", router))
+/* swearing monsters and other things
+ You want to know the truths?
+ No you don't
+ The problem here is that the "default" doesn't have a simple/easy method to listen on multiple 
+ IPs and piorts for the same router ;(
+*/
+	log.Println(fmt.Sprintf("Serving dyndns REST services on :8080..."))
+	go log.Fatal(http.ListenAndServe(":8080", router))
+	log.Println(fmt.Sprintf("Serving dyndns REST services on 127.0.0.1:8080..."))
+	go log.Fatal(http.ListenAndServe("127.0.0.1:8080", router))
+	go log.Fatal(http.ListenAndServe("[fdee:cafe:feed:beef::f]:8080", router))
+	log.Fatal(http.ListenAndServe("[fdee:cafe:feed:beef:1:1:1:1]:8080", router))
 }
 
 func DynUpdate(w http.ResponseWriter, r *http.Request) {
 	extractor := RequestDataExtractor{
 		Address: func(r *http.Request) string { return r.URL.Query().Get("myip") },
+		Cname: func(r *http.Request) string { return r.URL.Query().Get("mycname") },
+		Txt: func(r *http.Request) string { return r.URL.Query().Get("mytxt") },
 		Secret: func(r *http.Request) string {
 			_, sharedSecret, ok := r.BasicAuth()
 			if !ok || sharedSecret == "" {
@@ -76,6 +88,8 @@ func DynUpdate(w http.ResponseWriter, r *http.Request) {
 func Update(w http.ResponseWriter, r *http.Request) {
 	extractor := RequestDataExtractor{
 		Address: func(r *http.Request) string { return r.URL.Query().Get("addr") },
+		Cname: func(r *http.Request) string { return r.URL.Query().Get("cname") },
+		Txt: func(r *http.Request) string { return r.URL.Query().Get("txt") },
 		Secret:  func(r *http.Request) string { return r.URL.Query().Get("secret") },
 		Domain:  func(r *http.Request) string { return r.URL.Query().Get("domain") },
 	}
