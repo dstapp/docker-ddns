@@ -16,6 +16,8 @@ type RequestDataExtractor struct {
 	Address func(request *http.Request) string
 	Secret  func(request *http.Request) string
 	Domain  func(request *http.Request) string
+	Cname   func(request *http.Request) string
+	Txt   func(request *http.Request) string
 }
 
 type WebserviceResponse struct {
@@ -25,6 +27,8 @@ type WebserviceResponse struct {
 	Domains  []string
 	Address  string
 	AddrType string
+ 	Cname    string
+	Txt      string
 }
 
 func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extractors RequestDataExtractor) WebserviceResponse {
@@ -33,7 +37,8 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extr
 	sharedSecret := extractors.Secret(r)
 	response.Domains = strings.Split(extractors.Domain(r), ",")
 	response.Address = extractors.Address(r)
-
+	response.Cname = extractors.Cname(r)
+	response.Txt = extractors.Txt(r)
 	if sharedSecret != appConfig.SharedSecret {
 		log.Println(fmt.Sprintf("Invalid shared secret: %s", sharedSecret))
 		response.Success = false
@@ -57,6 +62,12 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extr
 		response.AddrType = "A"
 	} else if ipparser.ValidIP6(response.Address) {
 		response.AddrType = "AAAA"
+	} else if response.Cname != "" {
+		response.AddrType = "CNAME"
+	 	response.Address = response.Cname;	
+	} else if response.Txt != "" {
+		response.AddrType="TXT"
+		response.Address=response.Txt;
 	} else {
 		var ip string
 		var err error
