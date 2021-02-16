@@ -42,7 +42,12 @@ func DynUpdate(w http.ResponseWriter, r *http.Request) {
 
 			return sharedSecret
 		},
-		Domain: func(r *http.Request) string { return r.URL.Query().Get("hostname") },
+		Domain: func(r *http.Request) string {
+			confDomain := "." + appConfig.Domain
+			srcDomain := r.URL.Query().Get("hostname")
+			srcDomain = strings.Replace(srcDomain, confDomain, "", -1)
+			return srcDomain
+		},
 	}
 	response := BuildWebserviceResponseFromRequest(r, appConfig, extractor)
 
@@ -77,7 +82,12 @@ func Update(w http.ResponseWriter, r *http.Request) {
 	extractor := RequestDataExtractor{
 		Address: func(r *http.Request) string { return r.URL.Query().Get("addr") },
 		Secret:  func(r *http.Request) string { return r.URL.Query().Get("secret") },
-		Domain:  func(r *http.Request) string { return r.URL.Query().Get("domain") },
+		Domain: func(r *http.Request) string {
+			confDomain := "." + appConfig.Domain
+			srcDomain := r.URL.Query().Get("domain")
+			srcDomain = strings.Replace(srcDomain, confDomain, "", -1)
+			return srcDomain
+		},
 	}
 	response := BuildWebserviceResponseFromRequest(r, appConfig, extractor)
 
