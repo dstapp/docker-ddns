@@ -1,3 +1,5 @@
 SHARED_SECRET=changeme
 ZONE=example.org
 RECORD_TTL=3600
+NS=ns1.example.org,ns2.example.org
+TRANSFERIP=192.168.100.5;192.168.100.6
