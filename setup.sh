@@ -12,7 +12,19 @@ zone "$ZONE" {
 	type master;
 	file "$ZONE.zone";
 	allow-query { any; };
+EOF
+
+if [ ! -z $TRANSFERIP ]
+then
+	cat >> /etc/bind/named.conf <<EOF
+	allow-transfer { $TRANSFERIP; };
+EOF
+else 
+	cat >> /etc/bind/named.conf <<EOF
 	allow-transfer { none; };
+EOF
+fi
+	cat >> /etc/bind/named.conf <<EOF
 	allow-update { localhost; };
 };
 EOF
@@ -24,14 +36,31 @@ then
 	cat > /var/cache/bind/$ZONE.zone <<EOF
 \$ORIGIN .
 \$TTL 86400	; 1 day
-$ZONE		IN SOA	localhost. root.localhost. (
+$ZONE		IN SOA	localhost. root.$ZONE. (
 				74         ; serial
 				3600       ; refresh (1 hour)
 				900        ; retry (15 minutes)
 				604800     ; expire (1 week)
 				86400      ; minimum (1 day)
 				)
-			NS	localhost.
+EOF
+
+if [ ! -z $NS ]
+then
+array=(${NS//,/ })
+for var in ${array[@]}
+do
+cat >> /var/cache/bind/$ZONE.zone <<EOF
+			NS	$var
+EOF
+done
+else
+cat >> /var/cache/bind/$ZONE.zone <<EOF
+			NS	localhost
+EOF
+fi
+
+cat >> /var/cache/bind/$ZONE.zone <<EOF
 \$ORIGIN ${ZONE}.
 \$TTL ${RECORD_TTL}
 EOF
