@@ -106,15 +106,19 @@ The handlers will listen on:
 
 An example on the ddclient (Linux DDNS client) based Ubiquiti router line:
 
+```
 set service dns dynamic interface eth0 service dyndns host-name <your-ddns-hostname-to-be-updated>
 set service dns dynamic interface eth0 service dyndns login <anything-as-username-is-not-validated>
 set service dns dynamic interface eth0 service dyndns password <shared-secret>
 set service dns dynamic interface eth0 service dyndns protocol dyndns2
 set service dns dynamic interface eth0 service dyndns server <your-ddns-server>
+```
 
 Optional if you used this behind an HTTPS reverse proxy like I do:
 
+```
 set service dns dynamic interface eth0 service dyndns options ssl=true
+```
 
 This also means that DDCLIENT works out of the box and Linux based devices should work.
 
