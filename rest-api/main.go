@@ -1,52 +1,48 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
-	"os/exec"
 
 	"github.com/gorilla/mux"
 )
 
-var appConfig = &Config{}
+type key int
+
+const (
+	responseKey  key = iota
+	extractorKey key = iota
+)
+
+var appConfig = &ConfigFlags{}
 
 func main() {
-	appConfig.LoadConfig("/etc/dyndns.json")
+	defaultExtractor := defaultRequestDataExtractor{appConfig: &appConfig.Config}
+	dynExtractor := dynRequestDataExtractor{defaultRequestDataExtractor{appConfig: &appConfig.Config}}
+
+	appConfig.LoadConfig()
 
 	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/update", Update).Methods("GET")
+	router.Handle("/update", requestRequestDataMiddleware(http.HandlerFunc(update), defaultExtractor)).Methods(http.MethodGet)
+	router.Handle("/delete", requestRequestDataMiddleware(http.HandlerFunc(update), defaultExtractor)).Methods(http.MethodGet, http.MethodDelete)
 
 	/* DynDNS compatible handlers. Most routers will invoke /nic/update */
-	router.HandleFunc("/nic/update", DynUpdate).Methods("GET")
-	router.HandleFunc("/v2/update", DynUpdate).Methods("GET")
-	router.HandleFunc("/v3/update", DynUpdate).Methods("GET")
+	router.Handle("/nic/update", requestRequestDataMiddleware(http.HandlerFunc(dynUpdate), dynExtractor)).Methods(http.MethodGet)
+	router.Handle("/v2/update", requestRequestDataMiddleware(http.HandlerFunc(dynUpdate), dynExtractor)).Methods(http.MethodGet)
+	router.Handle("/v3/update", requestRequestDataMiddleware(http.HandlerFunc(dynUpdate), dynExtractor)).Methods(http.MethodGet)
 
-	log.Println(fmt.Sprintf("Serving dyndns REST services on 0.0.0.0:8080..."))
-	log.Fatal(http.ListenAndServe(":8080", router))
+	listenTo := fmt.Sprintf("%s:%d", "", appConfig.Port)
+
+	log.Println(fmt.Sprintf("Serving dyndns REST services on " + listenTo + "..."))
+	log.Fatal(http.ListenAndServe(listenTo, router))
 }
 
-func DynUpdate(w http.ResponseWriter, r *http.Request) {
-	extractor := RequestDataExtractor{
-		Address: func(r *http.Request) string { return r.URL.Query().Get("myip") },
-		Secret: func(r *http.Request) string {
-			_, sharedSecret, ok := r.BasicAuth()
-			if !ok || sharedSecret == "" {
-				sharedSecret = r.URL.Query().Get("password")
-			}
+func dynUpdate(w http.ResponseWriter, r *http.Request) {
+	response := r.Context().Value(responseKey).(WebserviceResponse)
 
-			return sharedSecret
-		},
-		Domain: func(r *http.Request) string { return r.URL.Query().Get("hostname") },
-	}
-	response := BuildWebserviceResponseFromRequest(r, appConfig, extractor)
-
-	if response.Success == false {
+	if !response.Success {
 		if response.Message == "Domain not set" {
 			w.Write([]byte("notfqdn\n"))
 		} else {
@@ -55,84 +51,90 @@ func DynUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, domain := range response.Domains {
-		result := UpdateRecord(domain, response.Address, response.AddrType)
+	success := updateDomains(r, &response, func() {
+		w.Write([]byte("dnserr\n"))
+	})
 
-		if result != "" {
-			response.Success = false
-			response.Message = result
-
-			w.Write([]byte("dnserr\n"))
-			return
-		}
+	if !success {
+		return
 	}
-
-	response.Success = true
-	response.Message = fmt.Sprintf("Updated %s record for %s to IP address %s", response.AddrType, response.Domain, response.Address)
 
 	w.Write([]byte(fmt.Sprintf("good %s\n", response.Address)))
 }
 
-func Update(w http.ResponseWriter, r *http.Request) {
-	extractor := RequestDataExtractor{
-		Address: func(r *http.Request) string { return r.URL.Query().Get("addr") },
-		Secret:  func(r *http.Request) string { return r.URL.Query().Get("secret") },
-		Domain:  func(r *http.Request) string { return r.URL.Query().Get("domain") },
-	}
-	response := BuildWebserviceResponseFromRequest(r, appConfig, extractor)
+func update(w http.ResponseWriter, r *http.Request) {
+	response := r.Context().Value(responseKey).(WebserviceResponse)
 
-	if response.Success == false {
+	if !response.Success {
 		json.NewEncoder(w).Encode(response)
 		return
 	}
 
-	for _, domain := range response.Domains {
-		result := UpdateRecord(domain, response.Address, response.AddrType)
+	success := updateDomains(r, &response, func() {
+		json.NewEncoder(w).Encode(response)
+	})
 
-		if result != "" {
-			response.Success = false
-			response.Message = result
-
-			json.NewEncoder(w).Encode(response)
-			return
-		}
+	if !success {
+		return
 	}
-
-	response.Success = true
-	response.Message = fmt.Sprintf("Updated %s record for %s to IP address %s", response.AddrType, response.Domain, response.Address)
 
 	json.NewEncoder(w).Encode(response)
 }
 
-func UpdateRecord(domain string, ipaddr string, addrType string) string {
-	log.Println(fmt.Sprintf("%s record update request: %s -> %s", addrType, domain, ipaddr))
+func updateDomains(r *http.Request, response *WebserviceResponse, onError func()) bool {
+	extractor := r.Context().Value(extractorKey).(requestDataExtractor)
 
-	f, err := ioutil.TempFile(os.TempDir(), "dyndns")
-	if err != nil {
-		return err.Error()
+	for _, record := range response.Records {
+		for _, domain := range response.Domains {
+			recordUpdate := RecordUpdateRequest{
+				domain:      domain,
+				ipAddr:      record.Value,
+				addrType:    record.Type,
+				secret:      extractor.Secret(r),
+				ddnsKeyName: extractor.DdnsKeyName(r, domain),
+				zone:        extractor.Zone(r, domain),
+				fqdn:        extractor.Fqdn(r, domain),
+				action:      extractor.Action(r),
+			}
+			result, err := recordUpdate.updateRecord()
+
+			if err != nil {
+				response.Success = false
+				response.Message = err.Error()
+
+				onError()
+				return false
+			}
+			response.Success = true
+			if len(response.Message) != 0 {
+				response.Message += "; "
+			}
+			response.Message += result
+		}
 	}
 
-	defer os.Remove(f.Name())
-	w := bufio.NewWriter(f)
+	return true
+}
 
-	w.WriteString(fmt.Sprintf("server %s\n", appConfig.Server))
-	w.WriteString(fmt.Sprintf("zone %s\n", appConfig.Zone))
-	w.WriteString(fmt.Sprintf("update delete %s.%s %s\n", domain, appConfig.Domain, addrType))
-	w.WriteString(fmt.Sprintf("update add %s.%s %v %s %s\n", domain, appConfig.Domain, appConfig.RecordTTL, addrType, ipaddr))
-	w.WriteString("send\n")
-
-	w.Flush()
-	f.Close()
-
-	cmd := exec.Command(appConfig.NsupdateBinary, f.Name())
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-	err = cmd.Run()
-	if err != nil {
-		return err.Error() + ": " + stderr.String()
+func (r RecordUpdateRequest) updateRecord() (string, error) {
+	var nsupdate NSUpdateInterface = NewNSUpdate()
+	message := "No action executed"
+	switch r.action {
+	case UpdateRequestActionDelete:
+		nsupdate.DeleteRecord(r)
+		message = fmt.Sprintf("Deleted %s record for %s", r.addrType, r.domain)
+	case UpdateRequestActionUpdate:
+		fallthrough
+	default:
+		nsupdate.UpdateRecord(r)
+		message = fmt.Sprintf("Updated %s record: %s -> %s", r.addrType, r.domain, r.ipAddr)
 	}
+	result := nsupdate.Close()
 
-	return out.String()
+	log.Println(message)
+
+	if result != "" {
+		return "", fmt.Errorf("%s", result)
+	}
+	return message, nil
 }
