@@ -13,27 +13,27 @@ import (
 )
 
 type WebserviceResponse struct {
-	Success   bool
-	Message   string
-	Domain    string
-	Domains   []string
-	Address   string
-	AddrType  string
-	Addresses []Address
-}
-
-type Address struct {
+	Success  bool
+	Message  string
+	Domain   string
+	Domains  []string
 	Address  string
 	AddrType string
+	Records  []Record
 }
 
-func ParseAddress(address string) (Address, error) {
+type Record struct {
+	Value string
+	Type  string
+}
+
+func ParseAddress(address string) (Record, error) {
 	if ipparser.ValidIP4(address) {
-		return Address{Address: address, AddrType: "A"}, nil
+		return Record{Value: address, Type: "A"}, nil
 	} else if ipparser.ValidIP6(address) {
-		return Address{Address: address, AddrType: "AAAA"}, nil
+		return Record{Value: address, Type: "AAAA"}, nil
 	}
-	return Address{}, fmt.Errorf("Invalid ip address: %s", address)
+	return Record{}, fmt.Errorf("invalid ip address: %s", address)
 }
 
 func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extractors requestDataExtractor) WebserviceResponse {
@@ -41,29 +41,42 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extr
 
 	response.Domains = strings.Split(extractors.Domain(r), ",")
 	for _, address := range strings.Split(extractors.Address(r), ",") {
+		if address == "" {
+			continue
+		}
 		var parsedAddress, error = ParseAddress(address)
 		if error == nil {
-			response.Addresses = append(response.Addresses, parsedAddress)
+			response.Records = append(response.Records, parsedAddress)
+		} else {
+			response.Success = false
+			response.Message = fmt.Sprintf("Error: %v. '%v' is neither a valid IPv4 nor IPv6 address", error, extractors.Address(r))
+			log.Println(response.Message)
+			return response
 		}
 	}
 
 	if extractors.Secret(r) == "" { // futher checking is done by bind server as configured
-		log.Println(fmt.Sprintf("Invalid shared secret"))
 		response.Success = false
 		response.Message = "Invalid Credentials"
+		log.Println(response.Message)
 		return response
 	}
 
 	for _, domain := range response.Domains {
 		if domain == "" {
 			response.Success = false
-			response.Message = fmt.Sprintf("Domain not set")
-			log.Println("Domain not set")
+			response.Message = "Domain not set"
+			log.Println(response.Message)
 			return response
 		}
 	}
 
-	if len(response.Addresses) == 0 {
+	req := Record{extractors.Value(r), extractors.Type(r)}
+	if req.Type != "" && req.Value != "" {
+		response.Records = append(response.Records, req)
+	}
+
+	if len(response.Records) == 0 {
 		ip, err := getUserIP(r)
 		if ip == "" {
 			ip, _, err = net.SplitHostPort(r.RemoteAddr)
@@ -72,22 +85,22 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extr
 		if err == nil {
 			parsedAddress, err := ParseAddress(ip)
 			if err == nil {
-				response.Addresses = append(response.Addresses, parsedAddress)
+				response.Records = append(response.Records, parsedAddress)
 			}
 		}
 	}
 
-	if len(response.Addresses) == 0 {
+	if len(response.Records) == 0 {
 		response.Success = false
-		response.Message = fmt.Sprintf("%v is neither a valid IPv4 nor IPv6 address", extractors.Address(r))
-		log.Println(fmt.Sprintf("Invalid address: %v", extractors.Address(r)))
+		response.Message = "No valid update data could be extracted from request"
+		log.Println(response.Message)
 		return response
 	}
 
 	// kept in the response for compatibility reasons
 	response.Domain = strings.Join(response.Domains, ",")
-	response.Address = response.Addresses[0].Address
-	response.AddrType = response.Addresses[0].AddrType
+	response.Address = response.Records[0].Value
+	response.AddrType = response.Records[0].Type
 
 	response.Success = true
 

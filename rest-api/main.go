@@ -41,7 +41,7 @@ func main() {
 func dynUpdate(w http.ResponseWriter, r *http.Request) {
 	response := r.Context().Value(responseKey).(WebserviceResponse)
 
-	if response.Success == false {
+	if !response.Success {
 		if response.Message == "Domain not set" {
 			w.Write([]byte("notfqdn\n"))
 		} else {
@@ -64,7 +64,7 @@ func dynUpdate(w http.ResponseWriter, r *http.Request) {
 func update(w http.ResponseWriter, r *http.Request) {
 	response := r.Context().Value(responseKey).(WebserviceResponse)
 
-	if response.Success == false {
+	if !response.Success {
 		json.NewEncoder(w).Encode(response)
 		return
 	}
@@ -83,12 +83,12 @@ func update(w http.ResponseWriter, r *http.Request) {
 func updateDomains(r *http.Request, response *WebserviceResponse, onError func()) bool {
 	extractor := r.Context().Value(extractorKey).(requestDataExtractor)
 
-	for _, address := range response.Addresses {
+	for _, record := range response.Records {
 		for _, domain := range response.Domains {
 			recordUpdate := RecordUpdateRequest{
 				domain:      domain,
-				ipAddr:      address.Address,
-				addrType:    address.AddrType,
+				ipAddr:      record.Value,
+				addrType:    record.Type,
 				secret:      extractor.Secret(r),
 				ddnsKeyName: extractor.DdnsKeyName(r, domain),
 				zone:        extractor.Zone(r, domain),
@@ -108,7 +108,7 @@ func updateDomains(r *http.Request, response *WebserviceResponse, onError func()
 			if len(response.Message) != 0 {
 				response.Message += "; "
 			}
-			response.Message += fmt.Sprintf("Updated %s record for %s to IP address %s", address.AddrType, domain, address.Address)
+			response.Message += fmt.Sprintf("Updated %s record for %s to IP address %s", record.Type, domain, record.Value)
 		}
 	}
 
