@@ -204,3 +204,14 @@ func TestBuildWebserviceResponseFromRequestToReturnInvalidObjectWhenNoSecretIsGi
 		t.Fatalf("Expected WebserviceResponse.Success to be false")
 	}
 }
+
+func TestBuildWebserviceResponseFromRequestToDeleteSuccess(t *testing.T) {
+	var appConfig = &Config{}
+
+	req, _ := http.NewRequest(http.MethodGet, "/delete?secret=changeme&domain=foo", nil)
+	result := BuildWebserviceResponseFromRequest(req, appConfig, defaultExtractor)
+
+	if !result.Success {
+		t.Fatalf("Expected /delete request to succeed")
+	}
+}

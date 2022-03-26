@@ -25,12 +25,13 @@ func main() {
 	appConfig.LoadConfig()
 
 	router := mux.NewRouter().StrictSlash(true)
-	router.Handle("/update", requestRequestDataMiddleware(http.HandlerFunc(update), defaultExtractor)).Methods("GET")
+	router.Handle("/update", requestRequestDataMiddleware(http.HandlerFunc(update), defaultExtractor)).Methods(http.MethodGet)
+	router.Handle("/delete", requestRequestDataMiddleware(http.HandlerFunc(update), defaultExtractor)).Methods(http.MethodGet, http.MethodDelete)
 
 	/* DynDNS compatible handlers. Most routers will invoke /nic/update */
-	router.Handle("/nic/update", requestRequestDataMiddleware(http.HandlerFunc(dynUpdate), dynExtractor)).Methods("GET")
-	router.Handle("/v2/update", requestRequestDataMiddleware(http.HandlerFunc(dynUpdate), dynExtractor)).Methods("GET")
-	router.Handle("/v3/update", requestRequestDataMiddleware(http.HandlerFunc(dynUpdate), dynExtractor)).Methods("GET")
+	router.Handle("/nic/update", requestRequestDataMiddleware(http.HandlerFunc(dynUpdate), dynExtractor)).Methods(http.MethodGet)
+	router.Handle("/v2/update", requestRequestDataMiddleware(http.HandlerFunc(dynUpdate), dynExtractor)).Methods(http.MethodGet)
+	router.Handle("/v3/update", requestRequestDataMiddleware(http.HandlerFunc(dynUpdate), dynExtractor)).Methods(http.MethodGet)
 
 	listenTo := fmt.Sprintf("%s:%d", "", appConfig.Port)
 
@@ -93,39 +94,47 @@ func updateDomains(r *http.Request, response *WebserviceResponse, onError func()
 				ddnsKeyName: extractor.DdnsKeyName(r, domain),
 				zone:        extractor.Zone(r, domain),
 				fqdn:        extractor.Fqdn(r, domain),
+				action:      extractor.Action(r),
 			}
-			result := recordUpdate.updateRecord()
+			result, err := recordUpdate.updateRecord()
 
-			if result != "" {
+			if err != nil {
 				response.Success = false
-				response.Message = result
+				response.Message = err.Error()
 
 				onError()
 				return false
 			}
-
 			response.Success = true
 			if len(response.Message) != 0 {
 				response.Message += "; "
 			}
-			response.Message += fmt.Sprintf("Updated %s record for %s to IP address %s", record.Type, domain, record.Value)
+			response.Message += result
 		}
 	}
 
 	return true
 }
 
-func (r RecordUpdateRequest) updateRecord() string {
+func (r RecordUpdateRequest) updateRecord() (string, error) {
 	var nsupdate NSUpdateInterface = NewNSUpdate()
-	nsupdate.UpdateRecord(r)
+	message := "No action executed"
+	switch r.action {
+	case UpdateRequestActionDelete:
+		nsupdate.DeleteRecord(r)
+		message = fmt.Sprintf("Deleted %s record for %s", r.addrType, r.domain)
+	case UpdateRequestActionUpdate:
+		fallthrough
+	default:
+		nsupdate.UpdateRecord(r)
+		message = fmt.Sprintf("Updated %s record: %s -> %s", r.addrType, r.domain, r.ipAddr)
+	}
 	result := nsupdate.Close()
 
-	status := "succeeded"
+	log.Println(message)
+
 	if result != "" {
-		status = "failed, error: " + result
+		return "", fmt.Errorf("%s", result)
 	}
-
-	log.Println(fmt.Sprintf("%s record update request: %s -> %s %s", r.addrType, r.domain, r.ipAddr, status))
-
-	return result
+	return message, nil
 }

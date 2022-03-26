@@ -10,6 +10,7 @@ func verify(t *testing.T, r *http.Request, extractor requestDataExtractor, domai
 		ddnsKeyName: extractor.DdnsKeyName(r, domain),
 		zone:        extractor.Zone(r, domain),
 		fqdn:        extractor.Fqdn(r, domain),
+		action:      extractor.Action(r),
 	}
 	if rru.zone != expected.zone {
 		t.Fatalf("Zone not configured but not empty: %s != %s", rru.zone, expected.zone)
@@ -21,6 +22,9 @@ func verify(t *testing.T, r *http.Request, extractor requestDataExtractor, domai
 
 	if rru.ddnsKeyName != expected.ddnsKeyName {
 		t.Fatalf("Wrong ddnskeyname: %s != %s", rru.ddnsKeyName, expected.ddnsKeyName)
+	}
+	if rru.action != expected.action {
+		t.Fatalf("Wrong action: %v != %v", rru.action, expected.action)
 	}
 }
 
@@ -91,5 +95,35 @@ func TestExtractorConfiguredZoneAndOnlyWithFQDN(t *testing.T) {
 		zone:        "",
 		fqdn:        "foo.example.org",
 		ddnsKeyName: "foo.example.org",
+	})
+}
+
+func TestExtractorURLDelete(t *testing.T) {
+	var e = defaultRequestDataExtractor{appConfig: &Config{
+		Zone: "example.org.",
+	}}
+
+	domain := "foo"
+	req, _ := http.NewRequest("GET", "/delete?secret=changeme&domain="+domain, nil)
+	verify(t, req, e, domain, RecordUpdateRequest{
+		zone:        "example.org",
+		fqdn:        "foo.example.org",
+		ddnsKeyName: "example.org",
+		action:      UpdateRequestActionDelete,
+	})
+}
+
+func TestExtractorMethodDelete(t *testing.T) {
+	var e = defaultRequestDataExtractor{appConfig: &Config{
+		Zone: "example.org.",
+	}}
+
+	domain := "foo"
+	req, _ := http.NewRequest(http.MethodDelete, "/delete?secret=changeme&domain="+domain, nil)
+	verify(t, req, e, domain, RecordUpdateRequest{
+		zone:        "example.org",
+		fqdn:        "foo.example.org",
+		ddnsKeyName: "example.org",
+		action:      UpdateRequestActionDelete,
 	})
 }

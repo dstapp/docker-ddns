@@ -90,18 +90,19 @@ func BuildWebserviceResponseFromRequest(r *http.Request, appConfig *Config, extr
 		}
 	}
 
-	if len(response.Records) == 0 {
-		response.Success = false
-		response.Message = "No valid update data could be extracted from request"
-		log.Println(response.Message)
-		return response
+	if extractors.Action(r) == UpdateRequestActionUpdate {
+		if len(response.Records) == 0 {
+			response.Success = false
+			response.Message = "No valid update data could be extracted from request"
+			log.Println(response.Message)
+			return response
+		}
+
+		// kept in the response for compatibility reasons
+		response.Domain = strings.Join(response.Domains, ",")
+		response.Address = response.Records[0].Value
+		response.AddrType = response.Records[0].Type
 	}
-
-	// kept in the response for compatibility reasons
-	response.Domain = strings.Join(response.Domains, ",")
-	response.Address = response.Records[0].Value
-	response.AddrType = response.Records[0].Type
-
 	response.Success = true
 
 	return response

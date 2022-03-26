@@ -14,8 +14,16 @@ import (
 // NSUpdateInterface is the interface to a client which can update a DNS record
 type NSUpdateInterface interface {
 	UpdateRecord(r RecordUpdateRequest)
+	DeleteRecord(r RecordUpdateRequest)
 	Close() string
 }
+
+type UpdateRequestAction int
+
+const (
+	UpdateRequestActionUpdate UpdateRequestAction = iota
+	UpdateRequestActionDelete
+)
 
 // RecordUpdateRequest data representing a update request
 type RecordUpdateRequest struct {
@@ -26,6 +34,7 @@ type RecordUpdateRequest struct {
 	secret      string
 	zone        string
 	fqdn        string
+	action      UpdateRequestAction
 }
 
 // NSUpdate holds resources need for an open nsupdate program
@@ -35,6 +44,8 @@ type NSUpdate struct {
 	stdinPipe io.WriteCloser
 	out       bytes.Buffer
 	stderr    bytes.Buffer
+	authSent  bool
+	needSend  bool
 }
 
 // NewNSUpdate starts the nsupdate program
@@ -58,6 +69,8 @@ func NewNSUpdate() *NSUpdate {
 		return nil
 	}
 	nsupdate.w = bufio.NewWriter(nsupdate.stdinPipe)
+	nsupdate.authSent = false
+	nsupdate.needSend = false
 
 	return nsupdate
 }
@@ -74,6 +87,10 @@ func (nsupdate *NSUpdate) write(format string, a ...interface{}) {
 // Close sends the quit command and waits for the response which is then returned.
 func (nsupdate *NSUpdate) Close() string {
 	var err error
+
+	if nsupdate.needSend {
+		nsupdate.Send()
+	}
 
 	nsupdate.write("quit\n")
 	nsupdate.w.Flush()
@@ -104,6 +121,24 @@ func escape(s string) string {
 
 // UpdateRecord sends the record update request to the nsupdate program
 func (nsupdate *NSUpdate) UpdateRecord(r RecordUpdateRequest) {
+	nsupdate.Auth(r)
+	nsupdate.DeleteRecord(r)
+	nsupdate.write("update add %s %v %s %s\n", r.fqdn, appConfig.RecordTTL, r.addrType, escape(r.ipAddr))
+	nsupdate.needSend = true
+}
+
+// DeleteRecord sends the record delete request to the nsupdate program
+func (nsupdate *NSUpdate) DeleteRecord(r RecordUpdateRequest) {
+	nsupdate.Auth(r)
+	nsupdate.write("update delete %s %s\n", r.fqdn, escape(r.addrType))
+	nsupdate.needSend = true
+}
+
+// DeleteRecord sends auth if needed
+func (nsupdate *NSUpdate) Auth(r RecordUpdateRequest) {
+	if nsupdate.authSent {
+		return
+	}
 	nsupdate.write("server %s\n", appConfig.Server)
 	if r.zone != "" {
 		nsupdate.write("zone %s\n", r.zone+".")
@@ -111,7 +146,9 @@ func (nsupdate *NSUpdate) UpdateRecord(r RecordUpdateRequest) {
 	if r.ddnsKeyName != "" {
 		nsupdate.write("key hmac-sha256:ddns-key.%s %s\n", escape(r.ddnsKeyName), escape(r.secret))
 	}
-	nsupdate.write("update delete %s %s\n", r.fqdn, r.addrType)
-	nsupdate.write("update add %s %v %s %s\n", r.fqdn, appConfig.RecordTTL, r.addrType, escape(r.ipAddr))
+	nsupdate.authSent = true
+}
+
+func (nsupdate *NSUpdate) Send() {
 	nsupdate.write("send\n")
 }

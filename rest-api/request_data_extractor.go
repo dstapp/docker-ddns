@@ -15,6 +15,7 @@ type requestDataExtractor interface {
 	DdnsKeyName(r *http.Request, domain string) string
 	Zone(r *http.Request, domain string) string
 	Fqdn(r *http.Request, domain string) string
+	Action(r *http.Request) UpdateRequestAction
 }
 
 type defaultRequestDataExtractor struct {
@@ -39,6 +40,12 @@ func (e defaultRequestDataExtractor) Value(r *http.Request) string {
 		value = e.Address(r)
 	}
 	return value
+}
+func (e defaultRequestDataExtractor) Action(r *http.Request) UpdateRequestAction {
+	if r.URL.Path == "/delete" || r.Method == http.MethodDelete {
+		return UpdateRequestActionDelete
+	}
+	return UpdateRequestActionUpdate
 }
 func (e defaultRequestDataExtractor) DdnsKeyName(r *http.Request, domain string) string {
 	ddnsKeyName := r.URL.Query().Get("ddnskeyname")
